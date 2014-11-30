@@ -1,0 +1,554 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Actors &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="up" title="Worlds" href="world.html" />
+    <link rel="next" title="Renderering" href="renderering.html" />
+    <link rel="prev" title="Zones" href="zone.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="renderering.html" title="Renderering"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="zone.html" title="Zones"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="world.html" accesskey="U">Worlds</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="actors">
+<h1><a class="toc-backref" href="#id1">Actors</a><a class="headerlink" href="#actors" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#actors" id="id1">Actors</a><ul>
+<li><a class="reference internal" href="#actor" id="id2">Actor</a></li>
+<li><a class="reference internal" href="#compositeactor" id="id3">CompositeActor</a></li>
+<li><a class="reference internal" href="#mountableactor" id="id4">MountableActor</a></li>
+<li><a class="reference internal" href="#physicallymountableactor" id="id5">PhysicallyMountableActor</a></li>
+<li><a class="reference internal" href="#actorcollection" id="id6">ActorCollection</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<span class="target" id="module-actor"></span><div class="section" id="actor">
+<h2><a class="toc-backref" href="#id2">Actor</a><a class="headerlink" href="#actor" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-c1202b7e308e3799f934db287e23636f645665d4.png" alt="Inheritance diagram of serge.actor.Actor" usemap="#inheritance33a8653ee8" class="inheritance"/>
+<map id="inheritance33a8653ee8" name="inheritance33a8653ee8">
+<area shape="rect" id="node1" href="common.html#serge.common.EventAware" title="serge.common.EventAware" alt="" coords="264,5,461,33"/>
+<area shape="rect" id="node8" href="#serge.actor.Actor" title="serge.actor.Actor" alt="" coords="511,55,641,83"/>
+<area shape="rect" id="node2" href="common.html#serge.common.Loggable" title="serge.common.Loggable" alt="" coords="272,55,453,83"/>
+<area shape="rect" id="node3" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle" alt="" coords="269,106,456,134"/>
+<area shape="rect" id="node4" href="geometry.html#serge.geometry.SpatialObject" title="serge.geometry.SpatialObject" alt="" coords="5,81,216,109"/>
+<area shape="rect" id="node6" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="16,131,205,159"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.actor.Actor">
+<em class="property">class </em><tt class="descclassname">serge.actor.</tt><tt class="descname">Actor</tt><big>(</big><em>tag</em>, <em>name=''</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="common.html#serge.common.Loggable" title="serge.common.Loggable"><tt class="xref py py-class docutils literal"><span class="pre">serge.common.Loggable</span></tt></a>, <a class="reference internal" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle"><tt class="xref py py-class docutils literal"><span class="pre">serge.geometry.Rectangle</span></tt></a>, <a class="reference internal" href="common.html#serge.common.EventAware" title="serge.common.EventAware"><tt class="xref py py-class docutils literal"><span class="pre">serge.common.EventAware</span></tt></a></p>
+<p>Represents an actor</p>
+<dl class="method">
+<dt id="serge.actor.Actor.addedToWorld">
+<tt class="descname">addedToWorld</tt><big>(</big><em>world</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.addedToWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.addedToWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when we are being added to the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.getAngle">
+<tt class="descname">getAngle</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.getAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.getAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the angle for the actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.getLayerName">
+<tt class="descname">getLayerName</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.getLayerName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.getLayerName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return our layer name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.getNiceName">
+<tt class="descname">getNiceName</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.getNiceName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.getNiceName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a nice name for this actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.getPhysical">
+<tt class="descname">getPhysical</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.getPhysical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.getPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the physical conditions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.getSpriteName">
+<tt class="descname">getSpriteName</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.getSpriteName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.getSpriteName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return our sprite</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.init">
+<tt class="descname">init</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize from serialized form</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.move">
+<tt class="descname">move</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.move"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.move" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move by a certain amount</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.moveTo">
+<tt class="descname">moveTo</tt><big>(</big><em>x</em>, <em>y</em>, <em>no_sync=False</em>, <em>override_lock=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.moveTo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.moveTo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move the center of this actor to the given location, unless it is locked</p>
+<p>You can override the lock by passing True to override lock.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.removedFromWorld">
+<tt class="descname">removedFromWorld</tt><big>(</big><em>world</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.removedFromWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.removedFromWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when we are being removed from the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.renderTo">
+<tt class="descname">renderTo</tt><big>(</big><em>renderer</em>, <em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.renderTo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.renderTo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render ourself to the given renderer</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.setAngle">
+<tt class="descname">setAngle</tt><big>(</big><em>angle</em>, <em>sync_physical=False</em>, <em>override_lock=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.setAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.setAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the angle for the visual</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.setLayerName">
+<tt class="descname">setLayerName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.setLayerName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.setLayerName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the layer that we render to</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.setPhysical">
+<tt class="descname">setPhysical</tt><big>(</big><em>physical_conditions</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.setPhysical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.setPhysical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the physical conditions</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.setSpriteName">
+<tt class="descname">setSpriteName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.setSpriteName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.setSpriteName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the sprite for this actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.setZoom">
+<tt class="descname">setZoom</tt><big>(</big><em>zoom</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.setZoom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.setZoom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Zoom in on this actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.syncPhysics">
+<tt class="descname">syncPhysics</tt><big>(</big><em>spatial_only=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.syncPhysics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.syncPhysics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sync physics when the actors physical properties have been changed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.Actor.updateActor">
+<tt class="descname">updateActor</tt><big>(</big><em>interval</em>, <em>world</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#Actor.updateActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.Actor.updateActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the actor status</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="compositeactor">
+<h2><a class="toc-backref" href="#id3">CompositeActor</a><a class="headerlink" href="#compositeactor" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-61a0bf96ecda2d2a2086e2e9488f2ecf720b030d.png" alt="Inheritance diagram of serge.actor.CompositeActor" usemap="#inheritancea9fb94aab4" class="inheritance"/>
+<map id="inheritancea9fb94aab4" name="inheritancea9fb94aab4">
+<area shape="rect" id="node1" href="common.html#serge.common.EventAware" title="serge.common.EventAware" alt="" coords="226,4,394,28"/>
+<area shape="rect" id="node4" href="#serge.actor.Actor" title="serge.actor.Actor" alt="" coords="436,47,548,71"/>
+<area shape="rect" id="node2" href="common.html#serge.common.Loggable" title="serge.common.Loggable" alt="" coords="232,47,387,71"/>
+<area shape="rect" id="node3" href="#serge.actor.CompositeActor" title="serge.actor.CompositeActor" alt="" coords="591,47,762,71"/>
+<area shape="rect" id="node7" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle" alt="" coords="230,91,390,115"/>
+<area shape="rect" id="node10" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="14,69,175,93"/>
+<area shape="rect" id="node11" href="geometry.html#serge.geometry.SpatialObject" title="serge.geometry.SpatialObject" alt="" coords="5,112,185,136"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.actor.CompositeActor">
+<em class="property">class </em><tt class="descclassname">serge.actor.</tt><tt class="descname">CompositeActor</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#serge.actor.Actor" title="serge.actor.Actor"><tt class="xref py py-class docutils literal"><span class="pre">serge.actor.Actor</span></tt></a></p>
+<p>An actor that can have children, which are also actors</p>
+<p>World operations on the parent, like adding and removing,
+will also apply to the children.</p>
+<p>If the children are removed from the parent then they are
+also removed from the world.</p>
+<dl class="method">
+<dt id="serge.actor.CompositeActor.addChild">
+<tt class="descname">addChild</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.addChild"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.addChild" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a child actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.addedToWorld">
+<tt class="descname">addedToWorld</tt><big>(</big><em>world</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.addedToWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.addedToWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when we are being added to the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.getChildren">
+<tt class="descname">getChildren</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.getChildren"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.getChildren" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of children</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.getChildrenWithTag">
+<tt class="descname">getChildrenWithTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.getChildrenWithTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.getChildrenWithTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the children with a certain tag</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.hasChild">
+<tt class="descname">hasChild</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.hasChild"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.hasChild" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this actor already has this actor as a child</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.hasChildren">
+<tt class="descname">hasChildren</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.hasChildren"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.hasChildren" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this actor has children</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.removeChild">
+<tt class="descname">removeChild</tt><big>(</big><em>actor</em>, <em>leave_in_world=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.removeChild"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.removeChild" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a child actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.removeChildren">
+<tt class="descname">removeChildren</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.removeChildren"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.removeChildren" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all the children</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.CompositeActor.removedFromWorld">
+<tt class="descname">removedFromWorld</tt><big>(</big><em>world</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#CompositeActor.removedFromWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.CompositeActor.removedFromWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when we are being removed from the world</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mountableactor">
+<h2><a class="toc-backref" href="#id4">MountableActor</a><a class="headerlink" href="#mountableactor" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-6aacdc818618a1bedce33896ed1a3ae6ae1ca754.png" alt="Inheritance diagram of serge.actor.MountableActor" usemap="#inheritance9f43b18ea0" class="inheritance"/>
+<map id="inheritance9f43b18ea0" name="inheritance9f43b18ea0">
+<area shape="rect" id="node1" href="#serge.actor.MountableActor" title="serge.actor.MountableActor" alt="" coords="660,29,764,44"/>
+<area shape="rect" id="node4" href="common.html#serge.common.EventAware" title="serge.common.EventAware" alt="" coords="140,2,245,17"/>
+<area shape="rect" id="node7" href="#serge.actor.Actor" title="serge.actor.Actor" alt="" coords="271,29,340,44"/>
+<area shape="rect" id="node5" href="common.html#serge.common.Loggable" title="serge.common.Loggable" alt="" coords="144,29,240,44"/>
+<area shape="rect" id="node6" href="#serge.actor.CompositeActor" title="serge.actor.CompositeActor" alt="" coords="367,29,473,44"/>
+<area shape="rect" id="node10" href="geometry.html#serge.geometry.SpatialObject" title="serge.geometry.SpatialObject" alt="" coords="3,43,115,58"/>
+<area shape="rect" id="node12" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle" alt="" coords="143,56,242,71"/>
+<area shape="rect" id="node11" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="8,70,109,85"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.actor.MountableActor">
+<em class="property">class </em><tt class="descclassname">serge.actor.</tt><tt class="descname">MountableActor</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#MountableActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.MountableActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">serge.actor.AbstractMountableActor</span></tt></p>
+<p>An actor that you can mount other actors to</p>
+<p>The other actors are located at a certain position
+relative to the position of this actor. You can
+use this actor to create clusters either visually
+or functionally.</p>
+<dl class="method">
+<dt id="serge.actor.MountableActor.moveTo">
+<tt class="descname">moveTo</tt><big>(</big><em>x</em>, <em>y</em>, <em>no_sync=False</em>, <em>override_lock=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#MountableActor.moveTo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.MountableActor.moveTo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move this actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.MountableActor.setAngle">
+<tt class="descname">setAngle</tt><big>(</big><em>angle</em>, <em>sync_physical=False</em>, <em>override_lock=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#MountableActor.setAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.MountableActor.setAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the angle for the visual</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="physicallymountableactor">
+<h2><a class="toc-backref" href="#id5">PhysicallyMountableActor</a><a class="headerlink" href="#physicallymountableactor" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-459e82563bf6cbcba7838f8d3c17745200239de2.png" alt="Inheritance diagram of serge.actor.PhysicallyMountableActor" usemap="#inheritancea16e4d1575" class="inheritance"/>
+<map id="inheritancea16e4d1575" name="inheritancea16e4d1575">
+<area shape="rect" id="node1" href="common.html#serge.common.EventAware" title="serge.common.EventAware" alt="" coords="134,2,235,17"/>
+<area shape="rect" id="node4" href="#serge.actor.Actor" title="serge.actor.Actor" alt="" coords="260,28,326,42"/>
+<area shape="rect" id="node2" href="common.html#serge.common.Loggable" title="serge.common.Loggable" alt="" coords="138,28,231,42"/>
+<area shape="rect" id="node3" href="#serge.actor.CompositeActor" title="serge.actor.CompositeActor" alt="" coords="352,28,454,42"/>
+<area shape="rect" id="node13" href="#serge.actor.PhysicallyMountableActor" title="serge.actor.PhysicallyMountableActor" alt="" coords="633,28,765,42"/>
+<area shape="rect" id="node8" href="geometry.html#serge.geometry.SpatialObject" title="serge.geometry.SpatialObject" alt="" coords="3,41,110,55"/>
+<area shape="rect" id="node10" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle" alt="" coords="137,54,232,68"/>
+<area shape="rect" id="node9" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="8,67,104,81"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.actor.PhysicallyMountableActor">
+<em class="property">class </em><tt class="descclassname">serge.actor.</tt><tt class="descname">PhysicallyMountableActor</tt><big>(</big><em>tag</em>, <em>name=''</em>, <em>mass=0.0</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">serge.actor.AbstractMountableActor</span></tt></p>
+<p>An physical actor that you can mount other physical actors to</p>
+<p>The other actors are located at a certain position
+relative to the position of this actor. You can
+use this actor to create clusters either visually
+or functionally.</p>
+<p>All actors must be under the control of the physics engine.</p>
+<dl class="method">
+<dt id="serge.actor.PhysicallyMountableActor.addedToWorld">
+<tt class="descname">addedToWorld</tt><big>(</big><em>world</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor.addedToWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor.addedToWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>The actor was added to the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.PhysicallyMountableActor.init">
+<tt class="descname">init</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise from serialized form</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.PhysicallyMountableActor.mountActor">
+<tt class="descname">mountActor</tt><big>(</big><em>actor</em>, <em>(x</em>, <em>y)</em>, <em>original_rotation=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor.mountActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor.mountActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mount the actor with the given offset</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.PhysicallyMountableActor.moveTo">
+<tt class="descname">moveTo</tt><big>(</big><em>x</em>, <em>y</em>, <em>no_sync=False</em>, <em>override_lock=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor.moveTo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor.moveTo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move this actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.PhysicallyMountableActor.setAngle">
+<tt class="descname">setAngle</tt><big>(</big><em>angle</em>, <em>sync_physical=False</em>, <em>override_lock=False</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor.setAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor.setAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the angle for the visual</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.PhysicallyMountableActor.unmountActor">
+<tt class="descname">unmountActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#PhysicallyMountableActor.unmountActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.PhysicallyMountableActor.unmountActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unmount the actor</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="actorcollection">
+<h2><a class="toc-backref" href="#id6">ActorCollection</a><a class="headerlink" href="#actorcollection" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-a2b1b7fd25146e6be1f705ee2cb7c37cf9d5daa4.png" alt="Inheritance diagram of serge.actor.ActorCollection" usemap="#inheritance598674d75c" class="inheritance"/>
+<map id="inheritance598674d75c" name="inheritance598674d75c">
+<area shape="rect" id="node1" href="#serge.actor.ActorCollection" title="serge.actor.ActorCollection" alt="" coords="5,5,200,33"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.actor.ActorCollection">
+<em class="property">class </em><tt class="descclassname">serge.actor.</tt><tt class="descname">ActorCollection</tt><a class="reference internal" href="_modules/serge/actor.html#ActorCollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt></p>
+<p>A list of actors</p>
+<p>This class implements some useful methods which help to 
+handle collections of actors.</p>
+<dl class="method">
+<dt id="serge.actor.ActorCollection.findActorByName">
+<tt class="descname">findActorByName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.findActorByName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.findActorByName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return then actor with the given name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.findActorsByTag">
+<tt class="descname">findActorsByTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.findActorsByTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.findActorsByTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a collection of actors with the given tag</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.findActorsByTags">
+<tt class="descname">findActorsByTags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.findActorsByTags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.findActorsByTags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a collection of actors with at least one of the tags</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.forEach">
+<tt class="descname">forEach</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.forEach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.forEach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an object suitable for mapping method calls to all the actors in the collection</p>
+<dl class="docutils">
+<dt>Use this like,</dt>
+<dd>collection.forEach().setAngle(12)</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.hasActor">
+<tt class="descname">hasActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.hasActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.hasActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if we have that actor</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.hasActorWithName">
+<tt class="descname">hasActorWithName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.hasActorWithName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.hasActorWithName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the collection contains an actor with the given name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.hasActorWithTag">
+<tt class="descname">hasActorWithTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.hasActorWithTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.hasActorWithTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the collection contains an actor with the given tag</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.numberOfActorsWithName">
+<tt class="descname">numberOfActorsWithName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.numberOfActorsWithName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.numberOfActorsWithName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of actors with the given name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.actor.ActorCollection.numberOfActorsWithTag">
+<tt class="descname">numberOfActorsWithTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/actor.html#ActorCollection.numberOfActorsWithTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.actor.ActorCollection.numberOfActorsWithTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of actors with the given tag</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Actors</a><ul>
+<li><a class="reference internal" href="#actor">Actor</a></li>
+<li><a class="reference internal" href="#compositeactor">CompositeActor</a></li>
+<li><a class="reference internal" href="#mountableactor">MountableActor</a></li>
+<li><a class="reference internal" href="#physicallymountableactor">PhysicallyMountableActor</a></li>
+<li><a class="reference internal" href="#actorcollection">ActorCollection</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="zone.html"
+                        title="previous chapter">Zones</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="renderering.html"
+                        title="next chapter">Renderering</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="renderering.html" title="Renderering"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="zone.html" title="Zones"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="world.html" >Worlds</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

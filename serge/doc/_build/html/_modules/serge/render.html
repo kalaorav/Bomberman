@@ -1,0 +1,447 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.render &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.render</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Classes to perform rendering&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">serialize</span>
+<span class="kn">import</span> <span class="nn">camera</span>
+<span class="kn">import</span> <span class="nn">visual</span>
+<span class="kn">import</span> <span class="nn">events</span>
+
+<span class="k">class</span> <span class="nc">DuplicateLayer</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The layer was already present&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">UnknownLayer</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The layer was not found&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">NoLayer</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;A layer was not found when one was expected&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Renderer"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer">[docs]</a><span class="k">class</span> <span class="nc">Renderer</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">,</span> <span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">EventAware</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The main rendering component&quot;&quot;&quot;</span>
+    
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;layers&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the layers we render to&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">I</span><span class="p">(</span><span class="s">&#39;width&#39;</span><span class="p">,</span> <span class="mi">640</span><span class="p">,</span> <span class="s">&#39;the width of the screen&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">I</span><span class="p">(</span><span class="s">&#39;height&#39;</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="s">&#39;the height of the screen&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;title&#39;</span><span class="p">,</span> <span class="s">&#39;Serge&#39;</span><span class="p">,</span> <span class="s">&#39;the title of the main window&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;backcolour&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="s">&#39;the background colour&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">O</span><span class="p">(</span><span class="s">&#39;camera&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;the camera for this renderer&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">O</span><span class="p">(</span><span class="s">&#39;icon&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;the icon for the main window&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;fullscreen&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether to display in full screen or not&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">640</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">480</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Serge&#39;</span><span class="p">,</span> <span class="n">backcolour</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">icon</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fullscreen</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Renderer&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backcolour</span> <span class="o">=</span> <span class="n">backcolour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fullscreen</span> <span class="o">=</span> <span class="n">fullscreen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">Camera</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">setSpatial</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">icon</span> <span class="o">=</span> <span class="n">icon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+            
+    <span class="c">### Serializing ###</span>
+    
+<div class="viewcode-block" id="Renderer.init"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise from serialized state&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sort_needed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+        <span class="c"># </span>
+        <span class="c"># Tried the following with flags but no impact pygame.FULLSCREEN|pygame.HWSURFACE|pygame.DOUBLEBUF</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">FULLSCREEN</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fullscreen</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">setSurface</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">resizeTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="n">visual</span><span class="o">.</span><span class="n">Register</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">icon</span><span class="p">)</span><span class="o">.</span><span class="n">raw_image</span><span class="p">)</span>
+                
+    <span class="c">### Layers ###</span>
+    </div>
+<div class="viewcode-block" id="Renderer.addLayer"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.addLayer">[docs]</a>    <span class="k">def</span> <span class="nf">addLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a layer to the rendering&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Adding layer &quot;</span><span class="si">%s</span><span class="s">&quot; at </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">order</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DuplicateLayer</span><span class="p">(</span><span class="s">&#39;The layer </span><span class="si">%s</span><span class="s"> is already in the renderer&#39;</span> <span class="o">%</span> <span class="n">layer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sort_needed</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resetSurfaces</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">layer</span>
+</div>
+<div class="viewcode-block" id="Renderer.getLayer"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.getLayer">[docs]</a>    <span class="k">def</span> <span class="nf">getLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the named layer&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">layer</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnknownLayer</span><span class="p">(</span><span class="s">&#39;No layer with name &quot;</span><span class="si">%s</span><span class="s">&quot; was found&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+</div>
+<div class="viewcode-block" id="Renderer.getLayerBefore"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.getLayerBefore">[docs]</a>    <span class="k">def</span> <span class="nf">getLayerBefore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the layer before the specified one in terms of rendering order&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">test_layer</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">test_layer</span><span class="o">.</span><span class="n">order</span> <span class="o">&lt;</span> <span class="n">layer</span><span class="o">.</span><span class="n">order</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">test_layer</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoLayer</span><span class="p">(</span><span class="s">&#39;There is no layer before </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">layer</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">())</span>
+        </div>
+<div class="viewcode-block" id="Renderer.resetSurfaces"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.resetSurfaces">[docs]</a>    <span class="k">def</span> <span class="nf">resetSurfaces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recreate the surfaces for our layers</span>
+<span class="sd">        </span>
+<span class="sd">        When layers are added we sometimes need to reset the layers,</span>
+<span class="sd">        for instance, virtual layers need to be shifted around so</span>
+<span class="sd">        that they have the right order.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sortLayers</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">():</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">initSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.getLayers"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.getLayers">[docs]</a>    <span class="k">def</span> <span class="nf">getLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all the layers&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span>
+        </div>
+<div class="viewcode-block" id="Renderer.removeLayer"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.removeLayer">[docs]</a>    <span class="k">def</span> <span class="nf">removeLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the layer from the rendering&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnknownLayer</span><span class="p">(</span><span class="s">&#39;The layer </span><span class="si">%s</span><span class="s"> was not found&#39;</span> <span class="o">%</span> <span class="n">layer</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="Renderer.removeLayerNamed"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.removeLayerNamed">[docs]</a>    <span class="k">def</span> <span class="nf">removeLayerNamed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the layer with the specific name&quot;&quot;&quot;</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayer</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Renderer.clearLayers"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.clearLayers">[docs]</a>    <span class="k">def</span> <span class="nf">clearLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear all the layers&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_sortLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sort the layers into the right order&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span> <span class="p">:</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">l1</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">l2</span><span class="o">.</span><span class="n">order</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sort_needed</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="Renderer.orderActors"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.orderActors">[docs]</a>    <span class="k">def</span> <span class="nf">orderActors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the list of actors sorted by who should be processed first to correctly render</span>
+<span class="sd">        </span>
+<span class="sd">        The actors are checked to see which layer they reside on and then</span>
+<span class="sd">        this is used to order the returned list.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Make a lookup table to quickly find layers</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">order</span><span class="p">)</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">()])</span>
+        <span class="n">actor_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">layers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getLayerName</span><span class="p">(),</span> <span class="mi">0</span><span class="p">),</span> <span class="n">actor</span><span class="p">)</span> <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="n">actors</span><span class="p">]</span>
+        <span class="n">actor_list</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">actor</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">actor</span> <span class="ow">in</span> <span class="n">actor_list</span><span class="p">]</span>
+
+    <span class="c">### Rendering ###</span>
+</div>
+<div class="viewcode-block" id="Renderer.clearSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.clearSurface">[docs]</a>    <span class="k">def</span> <span class="nf">clearSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear the surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backcolour</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Renderer.preRender"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.preRender">[docs]</a>    <span class="k">def</span> <span class="nf">preRender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepare for new rendering&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearSurface</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">clearSurface</span><span class="p">()</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">preRender</span><span class="p">()</span>
+                </div>
+<div class="viewcode-block" id="Renderer.render"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render all the layers&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Post rendering events</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">postRender</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Put layers in the right order</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sort_needed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sortLayers</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Render all layers</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                <span class="n">layer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>            
+</div>
+<div class="viewcode-block" id="Renderer.getSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.getSurface">[docs]</a>    <span class="k">def</span> <span class="nf">getSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the overall surface&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span>  
+    
+    <span class="c">### Camera stuff ###</span>
+    </div>
+<div class="viewcode-block" id="Renderer.setCamera"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.setCamera">[docs]</a>    <span class="k">def</span> <span class="nf">setCamera</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">camera</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our camera&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span> <span class="o">=</span> <span class="n">camera</span>    
+        </div>
+<div class="viewcode-block" id="Renderer.getCamera"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.getCamera">[docs]</a>    <span class="k">def</span> <span class="nf">getCamera</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return our camera&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span>  
+</div>
+<div class="viewcode-block" id="Renderer.getScreenSize"><a class="viewcode-back" href="../../renderering.html#serge.render.Renderer.getScreenSize">[docs]</a>    <span class="k">def</span> <span class="nf">getScreenSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the screen size&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+    
+
+           </div></div>
+<div class="viewcode-block" id="RenderingLayer"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer">[docs]</a><span class="k">class</span> <span class="nc">RenderingLayer</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">,</span> <span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">EventAware</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A layer on which to render things</span>
+<span class="sd">    </span>
+<span class="sd">    This is the abstract version of the layer. Create</span>
+<span class="sd">    subclasses of this to do useful things.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the name of the layer&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">I</span><span class="p">(</span><span class="s">&#39;order&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;the order to render (0=low)&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;active&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="s">&#39;whether this layer is active&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;static&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether this layer is static with respect to the camera&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Layer&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RenderingLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="RenderingLayer.setSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.setSurface">[docs]</a>    <span class="k">def</span> <span class="nf">setSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">surface</span>
+</div>
+<div class="viewcode-block" id="RenderingLayer.getSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.getSurface">[docs]</a>    <span class="k">def</span> <span class="nf">getSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the surface&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span>  
+</div>
+<div class="viewcode-block" id="RenderingLayer.initSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.initSurface">[docs]</a>    <span class="k">def</span> <span class="nf">initSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the surface that we need to draw on&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="RenderingLayer.getNiceName"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.getNiceName">[docs]</a>    <span class="k">def</span> <span class="nf">getNiceName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the nice name for this layer&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&#39;&lt;Layer </span><span class="si">%d</span><span class="s">: </span><span class="si">%s</span><span class="s"> - order </span><span class="si">%d</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="RenderingLayer.setStatic"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.setStatic">[docs]</a>    <span class="k">def</span> <span class="nf">setStatic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">static</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine whether this layer is static with respect to camera movements or not&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static</span> <span class="o">=</span> <span class="n">static</span>
+        
+    <span class="c">### Serializing ###</span>
+    </div>
+<div class="viewcode-block" id="RenderingLayer.init"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise from serialized state&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        
+    <span class="c">### Rendering ###</span>
+          </div>
+<div class="viewcode-block" id="RenderingLayer.clearSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.clearSurface">[docs]</a>    <span class="k">def</span> <span class="nf">clearSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear our surface&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+    </div>
+<div class="viewcode-block" id="RenderingLayer.preRender"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.preRender">[docs]</a>    <span class="k">def</span> <span class="nf">preRender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called before the layer has anything rendered to&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_BEFORE_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+        </div>
+<div class="viewcode-block" id="RenderingLayer.render"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        </div>
+<div class="viewcode-block" id="RenderingLayer.postRender"><a class="viewcode-back" href="../../renderering.html#serge.render.RenderingLayer.postRender">[docs]</a>    <span class="k">def</span> <span class="nf">postRender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called after the layer has has had everything rendered on it&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+    
+    </div></div>
+<div class="viewcode-block" id="Layer"><a class="viewcode-back" href="../../renderering.html#serge.render.Layer">[docs]</a><span class="k">class</span> <span class="nc">Layer</span><span class="p">(</span><span class="n">RenderingLayer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A rendering layer with its own surface</span>
+<span class="sd">    </span>
+<span class="sd">    This type of layer is useful for compositing because</span>
+<span class="sd">    you can do things to this layer once it has been</span>
+<span class="sd">    rendered (eg shadows, glows, blurs etc).</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Layer.initSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.Layer.initSurface">[docs]</a>    <span class="k">def</span> <span class="nf">initSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the surface that we need to draw on</span>
+<span class="sd">        </span>
+<span class="sd">        We create a surface that is identical to the background for the</span>
+<span class="sd">        main renderer.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setSurface</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">renderer</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">renderer</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+     </div>
+<div class="viewcode-block" id="Layer.clearSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.Layer.clearSurface">[docs]</a>    <span class="k">def</span> <span class="nf">clearSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear our surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Layer.render"><a class="viewcode-back" href="../../renderering.html#serge.render.Layer.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+    </div></div>
+<div class="viewcode-block" id="VirtualLayer"><a class="viewcode-back" href="../../renderering.html#serge.render.VirtualLayer">[docs]</a><span class="k">class</span> <span class="nc">VirtualLayer</span><span class="p">(</span><span class="n">RenderingLayer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A rendering layer that doesn&#39;t have its own surface</span>
+<span class="sd">    </span>
+<span class="sd">    This layer will render to the layer immediately</span>
+<span class="sd">    before it in the rendering cycle.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="VirtualLayer.initSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.VirtualLayer.initSurface">[docs]</a>    <span class="k">def</span> <span class="nf">initSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the surface that we need to draw on</span>
+<span class="sd">        </span>
+<span class="sd">        We do not want a surface ourself but we need the next surface</span>
+<span class="sd">        in line as far as the renderer is concerned.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSurface</span><span class="p">(</span><span class="n">renderer</span><span class="o">.</span><span class="n">getLayerBefore</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">getSurface</span><span class="p">())</span>
+        <span class="k">except</span> <span class="n">NoLayer</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSurface</span><span class="p">(</span><span class="n">renderer</span><span class="o">.</span><span class="n">getSurface</span><span class="p">())</span>
+            </div>
+<div class="viewcode-block" id="VirtualLayer.clearSurface"><a class="viewcode-back" href="../../renderering.html#serge.render.VirtualLayer.clearSurface">[docs]</a>    <span class="k">def</span> <span class="nf">clearSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear our surface</span>
+<span class="sd">        </span>
+<span class="sd">        Nothing to do here - handled by the real owner of the surface.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="VirtualLayer.render"><a class="viewcode-back" href="../../renderering.html#serge.render.VirtualLayer.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface</span>
+<span class="sd">        </span>
+<span class="sd">        Nothing to do here - handled by the real owner of the surface.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>    </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

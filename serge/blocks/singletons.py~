@@ -1,0 +1,19 @@
+"""Implement a store for singletons"""
+
+import serge.serialize
+import serge.registry
+
+
+
+class SingletonStore(serge.registry.GeneralStore):
+    """A store for global objects"""
+
+    def _registerItem(self, name):
+        """Register a new item"""
+        self.items[name] = serge.serialize.Bag()
+
+
+
+Store = SingletonStore()
+
+

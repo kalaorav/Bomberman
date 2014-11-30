@@ -1,0 +1,798 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.actor &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.actor</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;The actor class&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">serialize</span>
+<span class="kn">import</span> <span class="nn">geometry</span>
+<span class="kn">import</span> <span class="nn">visual</span> 
+<span class="kn">import</span> <span class="nn">events</span>
+<span class="kn">import</span> <span class="nn">physical</span>
+<span class="kn">import</span> <span class="nn">world</span>
+<span class="kn">import</span> <span class="nn">engine</span>
+<span class="kn">from</span> <span class="nn">common</span> <span class="kn">import</span> <span class="n">pymunk</span> 
+
+<span class="k">class</span> <span class="nc">InvalidActor</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The actor supplied was not valid for the operation&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">AlreadyMounted</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The actor was already mounted&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">NotMounted</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The actor was not mounted at all&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">PositionLocked</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The actor was locked in place&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">NoPhysicalConditions</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;An actor was expected to have some physical conditions&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">PositionLock</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A lock that you can place on an actor to prevent it moving&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reason</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the lock&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+        
+        
+<div class="viewcode-block" id="Actor"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor">[docs]</a><span class="k">class</span> <span class="nc">Actor</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">,</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">EventAware</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents an actor&quot;&quot;&quot;</span>
+    
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;tag&#39;</span><span class="p">,</span> <span class="s">&#39;actor&#39;</span><span class="p">,</span> <span class="s">&#39;the actor</span><span class="se">\&#39;</span><span class="s">s tag&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the actor</span><span class="se">\&#39;</span><span class="s">s name&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;active&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="s">&#39;whether the actor is active&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;visible&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="s">&#39;whether the actor is visible&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;sprite&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the name of our sprite&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;layer&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the name of the layer we render to&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">O</span><span class="p">(</span><span class="s">&#39;physical_conditions&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the physical conditions for this object&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;angle&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s">&#39;the angle for the actor&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">O</span><span class="p">(</span><span class="s">&#39;lock&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;a lock object you can place to prevent an actor moving&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the actor&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Actor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c"># Whether we respond to updates or not</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">True</span>   
+        <span class="c"># Class based tag to locate the actor by</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="n">tag</span>
+        <span class="c"># Unique name to locate by</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c"># Our sprite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sprite</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c"># The layer we render to</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>    
+        <span class="c"># Our zoom factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="c"># Physics parameters - None means no physics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c"># Angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="c"># Properties to lock an actor so it cannot be moved</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="bp">None</span>
+        
+<div class="viewcode-block" id="Actor.init"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize from serialized form&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Initializing actor </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Actor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSpriteName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sprite</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
+</div>
+<div class="viewcode-block" id="Actor.getNiceName"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.getNiceName">[docs]</a>    <span class="k">def</span> <span class="nf">getNiceName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a nice name for this actor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="n">name_part</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name_part</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span>
+        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s"> [</span><span class="si">%s</span><span class="s">] &lt;</span><span class="si">%s</span><span class="s">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">name_part</span><span class="p">,</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+        </div>
+<div class="viewcode-block" id="Actor.setSpriteName"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.setSpriteName">[docs]</a>    <span class="k">def</span> <span class="nf">setSpriteName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the sprite for this actor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">visual</span><span class="o">.</span><span class="n">Register</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">getCopy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sprite</span> <span class="o">=</span> <span class="n">name</span>
+        </div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">visual</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span>
+    <span class="nd">@visual.setter</span>
+    <span class="k">def</span> <span class="nf">visual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the visual item for this actor&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resetVisual</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">_resetVisual</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the visual item on the center point&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Adjust our location so that we are positioned and sized appropriately</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSpatialCentered</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setSpatialCentered</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Here is a hack - sometimes the visual width changes and we want to update our width</span>
+        <span class="c"># so we let the visual know about us so it can update our width. This is almost </span>
+        <span class="c"># certainly the wrong thing to do, but we have some tests in there so hopefully</span>
+        <span class="c"># the right thing becomes obvious later!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">_actor_parent</span> <span class="o">=</span> <span class="bp">self</span>
+        
+<div class="viewcode-block" id="Actor.getSpriteName"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.getSpriteName">[docs]</a>    <span class="k">def</span> <span class="nf">getSpriteName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return our sprite&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sprite</span>
+        </div>
+<div class="viewcode-block" id="Actor.setLayerName"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.setLayerName">[docs]</a>    <span class="k">def</span> <span class="nf">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the layer that we render to&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer</span> <span class="o">=</span> <span class="n">name</span>
+    </div>
+<div class="viewcode-block" id="Actor.getLayerName"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.getLayerName">[docs]</a>    <span class="k">def</span> <span class="nf">getLayerName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return our layer name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span>
+    </div>
+<div class="viewcode-block" id="Actor.renderTo"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render ourself to the given renderer&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">:</span>       
+            <span class="n">layer</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">getLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)</span>
+            <span class="n">camera</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">camera</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">static</span><span class="p">:</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrigin</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">camera</span><span class="o">.</span><span class="n">canSee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">getRelativeLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> 
+                <span class="k">return</span> <span class="c"># Cannot see me</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="n">coords</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Actor.updateActor"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.updateActor">[docs]</a>    <span class="k">def</span> <span class="nf">updateActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the actor status&quot;&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="Actor.removedFromWorld"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.removedFromWorld">[docs]</a>    <span class="k">def</span> <span class="nf">removedFromWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when we are being removed from the world&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_REMOVED_FROM_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Actor.addedToWorld"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when we are being added to the world&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_ADDED_TO_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+        </div>
+<div class="viewcode-block" id="Actor.setZoom"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.setZoom">[docs]</a>    <span class="k">def</span> <span class="nf">setZoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Zoom in on this actor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">scaleBy</span><span class="p">(</span><span class="n">zoom</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSpatialCentered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="n">zoom</span>
+</div>
+<div class="viewcode-block" id="Actor.setAngle"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the angle for the visual&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override_lock</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PositionLocked</span><span class="p">(</span><span class="s">&#39;Cannot rotate: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resetVisual</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">sync_physical</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="n">angle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        </div>
+<div class="viewcode-block" id="Actor.getAngle"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.getAngle">[docs]</a>    <span class="k">def</span> <span class="nf">getAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the angle for the actor&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span>
+    
+
+    <span class="c">### Physics ###</span>
+    </div>
+<div class="viewcode-block" id="Actor.setPhysical"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.setPhysical">[docs]</a>    <span class="k">def</span> <span class="nf">setPhysical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">physical_conditions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the physical conditions&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Watch for if this object already has a shape</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="o">.</span><span class="n">updateFrom</span><span class="p">(</span><span class="n">physical_conditions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Check if we should be using the size of the visual element</span>
+            <span class="k">if</span> <span class="n">physical_conditions</span><span class="o">.</span><span class="n">visual_size</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">visual</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">physical</span><span class="o">.</span><span class="n">InvalidDimensions</span><span class="p">(</span>
+                        <span class="s">&#39;No visual element set for actor </span><span class="si">%s</span><span class="s"> but visual_size requested&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">physical_conditions</span><span class="o">.</span><span class="n">visual_size</span> <span class="o">==</span> <span class="n">geometry</span><span class="o">.</span><span class="n">CIRCLE</span><span class="p">:</span>
+                        <span class="c"># Circle</span>
+                        <span class="n">physical_conditions</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="n">radius</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">radius</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">physical_conditions</span><span class="o">.</span><span class="n">visual_size</span> <span class="o">==</span> <span class="n">geometry</span><span class="o">.</span><span class="n">RECTANGLE</span><span class="p">:</span>
+                        <span class="c"># Rectangle</span>
+                        <span class="n">physical_conditions</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">physical</span><span class="o">.</span><span class="n">InvalidDimensions</span><span class="p">(</span><span class="s">&#39;Visual size setting (</span><span class="si">%s</span><span class="s">) is not recognized&#39;</span> <span class="o">%</span> <span class="n">physical_conditions</span><span class="o">.</span><span class="n">visual_size</span><span class="p">)</span>
+            <span class="c">#</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span> <span class="o">=</span> <span class="n">physical_conditions</span>
+        </div>
+<div class="viewcode-block" id="Actor.getPhysical"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.getPhysical">[docs]</a>    <span class="k">def</span> <span class="nf">getPhysical</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the physical conditions&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span>
+</div>
+<div class="viewcode-block" id="Actor.syncPhysics"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.syncPhysics">[docs]</a>    <span class="k">def</span> <span class="nf">syncPhysics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spatial_only</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sync physics when the actors physical properties have been changed&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="p">:</span>
+            <span class="c">#self.log.debug(&#39;Syncing physics for %s to %s, %s&#39; % (self.getNiceName(), self.x, self.y))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">spatial_only</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">physical_conditions</span><span class="o">.</span><span class="n">velocity</span>
+
+    <span class="c"># Remap x, y properties to allow syncing with the physics engine</span>
+</div>
+<div class="viewcode-block" id="Actor.move"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.move">[docs]</a>    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move by a certain amount&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Actor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">syncPhysics</span><span class="p">(</span><span class="n">spatial_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        
+</div>
+<div class="viewcode-block" id="Actor.moveTo"><a class="viewcode-back" href="../../actor.html#serge.actor.Actor.moveTo">[docs]</a>    <span class="k">def</span> <span class="nf">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move the center of this actor to the given location, unless it is locked</span>
+<span class="sd">        </span>
+<span class="sd">        You can override the lock by passing True to override lock.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override_lock</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PositionLocked</span><span class="p">(</span><span class="s">&#39;The actor is locked in place: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">Actor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="n">override_lock</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">no_sync</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">syncPhysics</span><span class="p">(</span><span class="n">spatial_only</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ActorCollection"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection">[docs]</a><span class="k">class</span> <span class="nc">ActorCollection</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A list of actors</span>
+<span class="sd">    </span>
+<span class="sd">    This class implements some useful methods which help to </span>
+<span class="sd">    handle collections of actors.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="ActorCollection.findActorsByTag"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.findActorsByTag">[docs]</a>    <span class="k">def</span> <span class="nf">findActorsByTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a collection of actors with the given tag&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ActorCollection</span><span class="p">([</span><span class="n">actor</span> <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">tag</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="ActorCollection.findActorsByTags"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.findActorsByTags">[docs]</a>    <span class="k">def</span> <span class="nf">findActorsByTags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a collection of actors with at least one of the tags&quot;&quot;&quot;</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">ActorCollection</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="n">collection</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">findActorsByTag</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">collection</span>
+                  </div>
+<div class="viewcode-block" id="ActorCollection.findActorByName"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.findActorByName">[docs]</a>    <span class="k">def</span> <span class="nf">findActorByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return then actor with the given name&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">actor</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidActor</span><span class="p">(</span><span class="s">&#39;The actor with name &quot;</span><span class="si">%s</span><span class="s">&quot; was not found in </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+        </div>
+<div class="viewcode-block" id="ActorCollection.numberOfActorsWithTag"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.numberOfActorsWithTag">[docs]</a>    <span class="k">def</span> <span class="nf">numberOfActorsWithTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of actors with the given tag&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">findActorsByTag</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>        
+</div>
+<div class="viewcode-block" id="ActorCollection.numberOfActorsWithName"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.numberOfActorsWithName">[docs]</a>    <span class="k">def</span> <span class="nf">numberOfActorsWithName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of actors with the given name&quot;&quot;&quot;</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">count</span>     
+    </div>
+<div class="viewcode-block" id="ActorCollection.hasActorWithTag"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.hasActorWithTag">[docs]</a>    <span class="k">def</span> <span class="nf">hasActorWithTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the collection contains an actor with the given tag&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numberOfActorsWithTag</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    </div>
+<div class="viewcode-block" id="ActorCollection.hasActorWithName"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.hasActorWithName">[docs]</a>    <span class="k">def</span> <span class="nf">hasActorWithName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the collection contains an actor with the given name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numberOfActorsWithName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</div>
+<div class="viewcode-block" id="ActorCollection.hasActor"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.hasActor">[docs]</a>    <span class="k">def</span> <span class="nf">hasActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we have that actor&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span>
+</div>
+<div class="viewcode-block" id="ActorCollection.forEach"><a class="viewcode-back" href="../../actor.html#serge.actor.ActorCollection.forEach">[docs]</a>    <span class="k">def</span> <span class="nf">forEach</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an object suitable for mapping method calls to all the actors in the collection</span>
+<span class="sd">        </span>
+<span class="sd">        Use this like,</span>
+<span class="sd">            collection.forEach().setAngle(12)</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ProxyLauncher</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div></div>
+<span class="k">class</span> <span class="nc">ProxyLauncher</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Intialise the proxy&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="o">=</span> <span class="n">items</span>
+        
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a mapped attribute call&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MapperList</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set an attribute of the list&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">MapperList</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">method_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Intialise the mapper&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="o">=</span> <span class="n">items</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method_name</span> <span class="o">=</span> <span class="n">method_name</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make the call&quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method_name</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+                    
+          
+<div class="viewcode-block" id="CompositeActor"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor">[docs]</a><span class="k">class</span> <span class="nc">CompositeActor</span><span class="p">(</span><span class="n">Actor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An actor that can have children, which are also actors</span>
+<span class="sd">    </span>
+<span class="sd">    World operations on the parent, like adding and removing,</span>
+<span class="sd">    will also apply to the children.</span>
+<span class="sd">    </span>
+<span class="sd">    If the children are removed from the parent then they are</span>
+<span class="sd">    also removed from the world.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c"># When serializing the children property can be needed (eg for the active and visible</span>
+    <span class="c"># properties)</span>
+    <span class="n">children</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
+        
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;children&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the child actors that we own&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;_world&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the world that we belong to&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the actor&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">ActorCollection</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_visible</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CompositeActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="c">### World events ###</span>
+    
+<div class="viewcode-block" id="CompositeActor.removedFromWorld"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.removedFromWorld">[docs]</a>    <span class="k">def</span> <span class="nf">removedFromWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when we are being removed from the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CompositeActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">removedFromWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">()[:]:</span>
+            <span class="n">world</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="o">=</span> <span class="bp">None</span>
+        </div>
+<div class="viewcode-block" id="CompositeActor.addedToWorld"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when we are being added to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CompositeActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">():</span>
+            <span class="n">world</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="o">=</span> <span class="n">world</span>
+            
+    <span class="c">### Children ###</span>
+            </div>
+<div class="viewcode-block" id="CompositeActor.addChild"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.addChild">[docs]</a>    <span class="k">def</span> <span class="nf">addChild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a child actor&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">events</span><span class="o">.</span><span class="n">E_REMOVED_FROM_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_childRemoved</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># If we are already in the world then add this actor to the world also</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_world</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_world</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">world</span><span class="o">.</span><span class="n">DuplicateActor</span><span class="p">:</span>
+                <span class="c"># Ok if the actor is already there</span>
+                <span class="k">pass</span>
+                   </div>
+<div class="viewcode-block" id="CompositeActor.removeChild"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.removeChild">[docs]</a>    <span class="k">def</span> <span class="nf">removeChild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">leave_in_world</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a child actor&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidActor</span><span class="p">(</span><span class="s">&#39;The actor </span><span class="si">%s</span><span class="s"> was not a child of </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="c">#</span>
+        <span class="c"># Remove the child from the world</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_world</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">leave_in_world</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_world</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CompositeActor.removeChildren"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.removeChildren">[docs]</a>    <span class="k">def</span> <span class="nf">removeChildren</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove all the children&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">()[:]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">removeChild</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="CompositeActor.hasChild"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.hasChild">[docs]</a>    <span class="k">def</span> <span class="nf">hasChild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if this actor already has this actor as a child&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span>
+</div>
+<div class="viewcode-block" id="CompositeActor.hasChildren"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.hasChildren">[docs]</a>    <span class="k">def</span> <span class="nf">hasChildren</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if this actor has children&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+            </div>
+<div class="viewcode-block" id="CompositeActor.getChildren"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.getChildren">[docs]</a>    <span class="k">def</span> <span class="nf">getChildren</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the list of children&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span>
+</div>
+<div class="viewcode-block" id="CompositeActor.getChildrenWithTag"><a class="viewcode-back" href="../../actor.html#serge.actor.CompositeActor.getChildrenWithTag">[docs]</a>    <span class="k">def</span> <span class="nf">getChildrenWithTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all the children with a certain tag&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">actor</span> <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">()</span> <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">tag</span><span class="p">]</span>
+    </div>
+    <span class="k">def</span> <span class="nf">_childRemoved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A child was removed from the world&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="c"># The active attribute should cascade to our children</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span>
+    <span class="nd">@active.setter</span>
+    <span class="k">def</span> <span class="nf">active</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the active&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">():</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">value</span>
+            
+    <span class="c"># The visible attribute should cascade to our children</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">visible</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visible</span>
+    <span class="nd">@visible.setter</span>
+    <span class="k">def</span> <span class="nf">visible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the visible&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_visible</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">():</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="n">value</span>
+        
+    </div>
+<span class="k">class</span> <span class="nc">AbstractMountableActor</span><span class="p">(</span><span class="n">CompositeActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An base class for actors that you can mount other actors to</span>
+<span class="sd">    </span>
+<span class="sd">    The other actors are located at a certain position</span>
+<span class="sd">    relative to the position of this actor. You can</span>
+<span class="sd">    use this actor to create clusters either visually</span>
+<span class="sd">    or functionally.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;children&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the child actors that we own&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;_world&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the world that we belong to&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">D</span><span class="p">(</span><span class="s">&#39;_offsets&#39;</span><span class="p">,</span> <span class="p">{},</span> <span class="s">&#39;the offsets to our children&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the MountableActor&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AbstractMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span> <span class="o">=</span> <span class="p">{}</span>
+        
+    <span class="k">def</span> <span class="nf">mountActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">original_rotation</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mount the actor with the given offset</span>
+<span class="sd">        </span>
+<span class="sd">        If original_rotation is True then the mount offset is taken as</span>
+<span class="sd">        working against the original rotation (ie angle = 0) of the</span>
+<span class="sd">        actor.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasChild</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AlreadyMounted</span><span class="p">(</span><span class="s">&#39;The actor </span><span class="si">%s</span><span class="s"> is already mounted to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="c">#</span>
+        <span class="c"># Handle original rotation</span>
+        <span class="k">if</span> <span class="n">original_rotation</span><span class="p">:</span>
+            <span class="n">old_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAngle</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addChild</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="p">[</span><span class="n">actor</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">original_rotation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="n">old_angle</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">PositionLock</span><span class="p">(</span><span class="s">&#39;is mounted to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">actor</span>
+        
+    <span class="k">def</span> <span class="nf">unmountActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unmount the actor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasChild</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">NotMounted</span><span class="p">(</span><span class="s">&#39;The actor </span><span class="si">%s</span><span class="s"> is not mounted to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeChild</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="k">del</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="p">[</span><span class="n">actor</span><span class="p">])</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="bp">None</span>
+
+   
+            
+<div class="viewcode-block" id="MountableActor"><a class="viewcode-back" href="../../actor.html#serge.actor.MountableActor">[docs]</a><span class="k">class</span> <span class="nc">MountableActor</span><span class="p">(</span><span class="n">AbstractMountableActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An actor that you can mount other actors to</span>
+<span class="sd">    </span>
+<span class="sd">    The other actors are located at a certain position</span>
+<span class="sd">    relative to the position of this actor. You can</span>
+<span class="sd">    use this actor to create clusters either visually</span>
+<span class="sd">    or functionally.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+
+<div class="viewcode-block" id="MountableActor.moveTo"><a class="viewcode-back" href="../../actor.html#serge.actor.MountableActor.moveTo">[docs]</a>    <span class="k">def</span> <span class="nf">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move this actor&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AbstractMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="n">no_sync</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="n">override_lock</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">actor</span><span class="p">,</span> <span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">dx</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">dy</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="n">no_sync</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="MountableActor.setAngle"><a class="viewcode-back" href="../../actor.html#serge.actor.MountableActor.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the angle for the visual&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override_lock</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PositionLocked</span><span class="p">(</span><span class="s">&#39;Cannot rotate: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+        <span class="n">old_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAngle</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AbstractMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="n">sync_physical</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="n">override_lock</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">actor</span><span class="p">,</span> <span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="n">sync_physical</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="c">#</span>
+            <span class="c"># Now also rotate the position</span>
+            <span class="n">off</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">Vec2d</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
+            <span class="n">off</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">angle</span><span class="o">-</span><span class="n">old_angle</span><span class="p">)))</span> <span class="c"># Pymunk&#39;s angles reversed compared to pygame</span>
+            <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">off</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">ny</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="c">#</span>
+            <span class="c"># Update the offsets so we stay in position</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="p">[</span><span class="n">actor</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">)</span>
+
+        
+
+</div></div>
+<div class="viewcode-block" id="PhysicallyMountableActor"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor">[docs]</a><span class="k">class</span> <span class="nc">PhysicallyMountableActor</span><span class="p">(</span><span class="n">AbstractMountableActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An physical actor that you can mount other physical actors to</span>
+<span class="sd">    </span>
+<span class="sd">    The other actors are located at a certain position</span>
+<span class="sd">    relative to the position of this actor. You can</span>
+<span class="sd">    use this actor to create clusters either visually</span>
+<span class="sd">    or functionally.</span>
+<span class="sd">    </span>
+<span class="sd">    All actors must be under the control of the physics engine.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;children&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the child actors that we own&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;_world&#39;</span><span class="p">,</span> <span class="p">[],</span> <span class="s">&#39;the world that we belong to&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">D</span><span class="p">(</span><span class="s">&#39;_offsets&#39;</span><span class="p">,</span> <span class="p">{},</span> <span class="s">&#39;the offsets to our children&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">mass</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the MountableActor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mass</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoPhysicalConditions</span><span class="p">(</span><span class="s">&#39;Mass needs to be specified for mountable actor&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setPhysical</span><span class="p">(</span><span class="n">physical</span><span class="o">.</span><span class="n">PhysicalBody</span><span class="p">(</span><span class="n">mass</span><span class="o">=</span><span class="n">mass</span><span class="p">,</span> <span class="n">update_angle</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="PhysicallyMountableActor.init"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise from serialized form&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="PhysicallyMountableActor.mountActor"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor.mountActor">[docs]</a>    <span class="k">def</span> <span class="nf">mountActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">original_rotation</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mount the actor with the given offset&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">NoPhysicalConditions</span><span class="p">(</span><span class="s">&#39;Actor </span><span class="si">%s</span><span class="s"> does not have any physical conditions. Cannot mount to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">actor</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">original_rotation</span><span class="p">)</span>
+
+        </div>
+<div class="viewcode-block" id="PhysicallyMountableActor.unmountActor"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor.unmountActor">[docs]</a>    <span class="k">def</span> <span class="nf">unmountActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unmount the actor&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">unmountActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="PhysicallyMountableActor.addedToWorld"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The actor was added to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_createJoints</span><span class="p">()</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_createJoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the joints to hold the children together&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Create a joints to link the actors</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c">#</span>
+        <span class="c"># First link</span>
+        <span class="n">actor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">joint</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">PivotJoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Make the main body rotate with the first child</span>
+        <span class="n">joint</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">RotaryLimitJoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Link all the children</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Added mounting joint between </span><span class="si">%s</span><span class="s"> and </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[:]</span>
+            <span class="k">while</span> <span class="n">children</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">actor</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">children</span> <span class="o">=</span> <span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">children</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">children</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">actor</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">[]</span>
+                <span class="c">#</span>
+                <span class="n">joint</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">PivotJoint</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> 
+                        <span class="o">-</span><span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="n">other</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Added mounting joint between </span><span class="si">%s</span><span class="s"> and </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="n">other</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+            <span class="c">#</span>
+            <span class="c"># Constrain the last child to rotate at the same rate as the first</span>
+            <span class="n">actor</span><span class="p">,</span> <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">joint</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">RotaryLimitJoint</span><span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">joint</span><span class="p">)</span>
+            
+<div class="viewcode-block" id="PhysicallyMountableActor.setAngle"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the angle for the visual&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">override_lock</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PositionLocked</span><span class="p">(</span><span class="s">&#39;Cannot rotate: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sync_physical</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_clearJoints</span><span class="p">()</span>
+            <span class="n">old_angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAngle</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">actor</span><span class="p">,</span> <span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="c">#</span>
+                <span class="c"># Now also rotate the position</span>
+                <span class="n">off</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span>
+                <span class="n">off</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">angle</span><span class="o">-</span><span class="n">old_angle</span><span class="p">)))</span> <span class="c"># Pymunk&#39;s angles reversed compared to pygame</span>
+                <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">off</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">ny</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="n">sync_physical</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">angular_velocity</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="c">#</span>
+                <span class="c"># Update the offsets so we stay in position</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsets</span><span class="p">[</span><span class="n">actor</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">sync_physical</span><span class="o">=</span><span class="n">sync_physical</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="n">override_lock</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">angular_velocity</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">sync_physical</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_createJoints</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_clearJoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear all the joints&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_joints</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_joints</span> <span class="o">=</span> <span class="p">[]</span>
+        
+<div class="viewcode-block" id="PhysicallyMountableActor.moveTo"><a class="viewcode-back" href="../../actor.html#serge.actor.PhysicallyMountableActor.moveTo">[docs]</a>    <span class="k">def</span> <span class="nf">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move this actor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">no_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_clearJoints</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getChildren</span><span class="p">():</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">position</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">dx</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">dy</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="n">no_sync</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicallyMountableActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">no_sync</span><span class="o">=</span><span class="n">no_sync</span><span class="p">,</span> <span class="n">override_lock</span><span class="o">=</span><span class="n">override_lock</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getPhysical</span><span class="p">()</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">no_sync</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_createJoints</span><span class="p">()</span>
+           
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

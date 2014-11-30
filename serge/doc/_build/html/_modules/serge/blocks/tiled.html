@@ -1,0 +1,519 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.tiled &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.tiled</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Implements an interface to Tiled files&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">import</span> <span class="n">ElementTree</span>
+
+<span class="kn">import</span> <span class="nn">serge.common</span>
+<span class="kn">import</span> <span class="nn">serge.visual</span>
+
+
+<div class="viewcode-block" id="BadTiledFile"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.BadTiledFile">[docs]</a><span class="k">class</span> <span class="nc">BadTiledFile</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The tiled file could not be found&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="NotFound"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.NotFound">[docs]</a><span class="k">class</span> <span class="nc">NotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The object was not found&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BadLayer"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.BadLayer">[docs]</a><span class="k">class</span> <span class="nc">BadLayer</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The layer specification was invalid&quot;&quot;&quot;</span>
+
+</div>
+<span class="n">LAYER_TYPES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;visual&#39;</span><span class="p">,</span>       <span class="c"># Sprites</span>
+    <span class="s">&#39;adhoc-visual&#39;</span><span class="p">,</span> <span class="c"># Object layer with sprite tiles placed on non-orthoganol grid</span>
+    <span class="s">&#39;movement&#39;</span><span class="p">,</span>     <span class="c"># Whether actors can move on this tile</span>
+    <span class="s">&#39;visibility&#39;</span><span class="p">,</span>   <span class="c"># Whether actors can see through this tile</span>
+    <span class="s">&#39;object&#39;</span><span class="p">,</span>       <span class="c"># Objects </span>
+    <span class="s">&#39;resistance&#39;</span><span class="p">,</span>   <span class="c"># Resistance to movement</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="TileMap"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap">[docs]</a><span class="k">class</span> <span class="nc">TileMap</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A representation of a 2d map of tiles&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Tiled&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">TileMap</span><span class="o">.</span><span class="n">resetLayerTypes</span><span class="p">()</span>
+
+    <span class="nd">@classmethod</span>    
+<div class="viewcode-block" id="TileMap.resetLayerTypes"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.resetLayerTypes">[docs]</a>    <span class="k">def</span> <span class="nf">resetLayerTypes</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the layer types to default&quot;&quot;&quot;</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">layer_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">LAYER_TYPES</span><span class="p">)</span>
+</div>
+    <span class="nd">@classmethod</span>    
+<div class="viewcode-block" id="TileMap.addLayerTypes"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.addLayerTypes">[docs]</a>    <span class="k">def</span> <span class="nf">addLayerTypes</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">layer_types</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add more layer types&quot;&quot;&quot;</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">layer_types</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">layer_types</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TileMap.addLayer"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.addLayer">[docs]</a>    <span class="k">def</span> <span class="nf">addLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a layer&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">layer</span>
+        </div>
+<div class="viewcode-block" id="TileMap.getLayers"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getLayers">[docs]</a>    <span class="k">def</span> <span class="nf">getLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the layers of tiles&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span>
+</div>
+<div class="viewcode-block" id="TileMap.getLayersByType"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getLayersByType">[docs]</a>    <span class="k">def</span> <span class="nf">getLayersByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the layer with a given type&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">layer</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">()</span> <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="n">type_name</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="TileMap.getLayerByType"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getLayerByType">[docs]</a>    <span class="k">def</span> <span class="nf">getLayerByType</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the layer with a given type&quot;&quot;&quot;</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayersByType</span><span class="p">(</span><span class="n">type_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">layers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFound</span><span class="p">(</span><span class="s">&#39;A layer with type &quot;</span><span class="si">%s</span><span class="s">&quot; was not found&#39;</span> <span class="o">%</span> <span class="n">type_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadLayer</span><span class="p">(</span><span class="s">&#39;Multiple layers with type &quot;</span><span class="si">%s</span><span class="s">&quot; were found&#39;</span> <span class="o">%</span> <span class="n">type_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            </div>
+<div class="viewcode-block" id="TileMap.getLayer"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getLayer">[docs]</a>    <span class="k">def</span> <span class="nf">getLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;return the tile with a certain name&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">layer</span>
+        <span class="k">raise</span> <span class="n">NotFound</span><span class="p">(</span><span class="s">&#39;A layer named &quot;</span><span class="si">%s</span><span class="s">&quot; was not found&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TileMap.getTypeFrom"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getTypeFrom">[docs]</a>    <span class="k">def</span> <span class="nf">getTypeFrom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">properties</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the layer type, checking validity which we do it&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">layer_type</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadLayer</span><span class="p">(</span><span class="s">&#39;Layer &quot;</span><span class="si">%s</span><span class="s">&quot; in file &quot;</span><span class="si">%s</span><span class="s">&quot; does not have a type property. Should be one of </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">LAYER_TYPES</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">layer_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_types</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">layer_type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadLayer</span><span class="p">(</span><span class="s">&#39;Layer &quot;</span><span class="si">%s</span><span class="s">&quot; in file &quot;</span><span class="si">%s</span><span class="s">&quot; has an invalid type property (</span><span class="si">%s</span><span class="s">). Should be one of </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> 
+                <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">layer_type</span><span class="p">,</span> <span class="n">LAYER_TYPES</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="TileMap.getPropertiesFrom"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getPropertiesFrom">[docs]</a>    <span class="k">def</span> <span class="nf">getPropertiesFrom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a property disction from the node&quot;&quot;&quot;</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;true&#39;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">elif</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;false&#39;</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">text</span>
+            <span class="n">props</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">props</span>
+    </div>
+<div class="viewcode-block" id="TileMap.getSpriteName"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getSpriteName">[docs]</a>    <span class="k">def</span> <span class="nf">getSpriteName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the sprite name for an index&quot;&quot;&quot;</span>
+        <span class="n">last_end</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ending_at</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tilesets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="n">ending_at</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">idx</span><span class="o">-</span><span class="n">last_end</span><span class="p">)</span>
+            <span class="n">last_end</span> <span class="o">=</span> <span class="n">ending_at</span><span class="o">-</span><span class="mi">1</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Unknown sprite gid (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">idx</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TileMap.getLayersForTile"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getLayersForTile">[docs]</a>    <span class="k">def</span> <span class="nf">getLayersForTile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">excluding</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a list of the layers that the tile at x, y is set on&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">excluding</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">excluding</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">layer</span> <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">()</span> <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">layer_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">excluding</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="TileMap.getPropertyBagArray"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getPropertyBagArray">[docs]</a>    <span class="k">def</span> <span class="nf">getPropertyBagArray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sprite_layers</span><span class="p">,</span> <span class="n">boolean_layers</span><span class="p">,</span> <span class="n">property_layers</span><span class="p">,</span> <span class="n">prototype</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">optional_layers</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an array of property bags for the tile array</span>
+<span class="sd">        </span>
+<span class="sd">        You pass a series of lists of layer types, which are treated like:</span>
+<span class="sd">            sprite_layers = tile based layers to treat as identifying sprites</span>
+<span class="sd">            boolean_layers = tile layers where if a tile is set (to anything) then a boolean flag is True</span>
+<span class="sd">            property_layers = tile layers where if a tile is set then the item recieves all the properties of the layer</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">optional_layers</span> <span class="o">=</span> <span class="n">optional_layers</span> <span class="k">if</span> <span class="n">optional_layers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="p">[]</span> 
+        <span class="c">#</span>
+        <span class="c"># Set the default item</span>
+        <span class="k">if</span> <span class="n">prototype</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">prototype</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">SerializedBag</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Create an array to store the results</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">):</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">):</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="n">prototype</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">cell</span><span class="o">.</span><span class="n">sprites</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">boolean_type</span> <span class="ow">in</span> <span class="n">boolean_layers</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">boolean_type</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+                <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Add sprites</span>
+        <span class="k">for</span> <span class="n">sprite_type</span> <span class="ow">in</span> <span class="n">sprite_layers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayersByType</span><span class="p">(</span><span class="n">sprite_type</span><span class="p">):</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">iterCellLocations</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]:</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">sprites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSpriteName</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]))</span>
+        <span class="c">#</span>
+        <span class="c"># Add booleans</span>
+        <span class="k">for</span> <span class="n">boolean_type</span> <span class="ow">in</span> <span class="n">boolean_layers</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayerByType</span><span class="p">(</span><span class="n">boolean_type</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">NotFound</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">boolean_type</span> <span class="ow">in</span> <span class="n">optional_layers</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">getLocationsWithTile</span><span class="p">():</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">],</span> <span class="n">boolean_type</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Add properties</span>
+        <span class="k">for</span> <span class="n">property_type</span> <span class="ow">in</span> <span class="n">property_layers</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayersByType</span><span class="p">(</span><span class="n">property_type</span><span class="p">):</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">getLocationsWithTile</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">],</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">return</span> <span class="n">data</span>
+</div>
+<div class="viewcode-block" id="TileMap.getSize"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileMap.getSize">[docs]</a>    <span class="k">def</span> <span class="nf">getSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the size of the map using the first layer as a guide&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLayers</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getSize</span><span class="p">()</span>        
+        
+        </div></div>
+<div class="viewcode-block" id="Tiled"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Tiled">[docs]</a><span class="k">class</span> <span class="nc">Tiled</span><span class="p">(</span><span class="n">TileMap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An interface to tiled files&quot;&quot;&quot;</span>
+    
+    <span class="n">layer_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">LAYER_TYPES</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Tiled&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tiled</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registerSprites</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parseLayers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parseObjectLayers</span><span class="p">()</span>
+                    
+    <span class="k">def</span> <span class="nf">_registerSprites</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register all the sprites&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Parsing sprites from </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadTiledFile</span><span class="p">(</span><span class="s">&#39;Unable to load XML file &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Find all tilesets in the file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tilesets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tileset</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;.//tileset&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Found tileset &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">tileset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+            <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tileset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;tilewidth&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">tileset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;tileheight&#39;</span><span class="p">])</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">tileset</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;image&#39;</span><span class="p">)</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">),</span> <span class="n">image</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;source&#39;</span><span class="p">])</span>
+            <span class="n">source_width</span><span class="p">,</span> <span class="n">source_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;width&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;height&#39;</span><span class="p">])</span>
+            <span class="c">#</span>
+            <span class="c"># Create all images</span>
+            <span class="n">number</span> <span class="o">=</span> <span class="p">((</span><span class="n">source_width</span><span class="o">*</span><span class="n">source_height</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">width</span><span class="o">*</span><span class="n">height</span><span class="p">))</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tileset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">number</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Sprites</span><span class="o">.</span><span class="n">registerMultipleItems</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">source_width</span><span class="o">/</span><span class="n">width</span><span class="p">,</span> <span class="n">source_height</span><span class="o">/</span><span class="n">height</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Created </span><span class="si">%d</span><span class="s"> tiles&#39;</span> <span class="o">%</span> <span class="n">number</span><span class="p">)</span>
+            <span class="c">#</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tilesets</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">tileset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">number</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="n">tileset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;firstgid&#39;</span><span class="p">])))</span>
+
+    <span class="k">def</span> <span class="nf">_parseLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the layers&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Parsing layers from </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c">#</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadTiledFile</span><span class="p">(</span><span class="s">&#39;Unable to load XML file &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;width&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;height&#39;</span><span class="p">])</span>
+        <span class="c">#</span>
+        <span class="c"># Find all layers</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;.//layer&#39;</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Found layer &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;width&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;height&#39;</span><span class="p">])</span>                    
+            <span class="c">#</span>
+            <span class="c"># Get all data</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)):</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)):</span>
+                    <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">col</span><span class="p">))</span>
+            <span class="c">#</span>
+            <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPropertiesFrom</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;properties/property&#39;</span><span class="p">))</span>
+            <span class="n">layer_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTypeFrom</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">properties</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">Layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">layer_type</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">properties</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_parseObjectLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the layers of objects&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Parsing object layers from </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">object_layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c">#</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">ElementTree</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadTiledFile</span><span class="p">(</span><span class="s">&#39;Unable to load XML file &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Find all layers</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;.//objectgroup&#39;</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Found layer &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+            <span class="n">properties</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPropertiesFrom</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;properties/property&#39;</span><span class="p">))</span>
+            <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;width&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;height&#39;</span><span class="p">])</span>                    
+            <span class="n">new_layer</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span> <span class="s">&#39;object&#39;</span><span class="p">),</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">properties</span><span class="p">)</span>
+            <span class="c">#</span>
+            <span class="c"># Look for ad-hoc visual layer</span>
+            <span class="k">if</span> <span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;adhoc-visual&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_layer</span><span class="p">)</span>
+                <span class="c"># </span>
+                <span class="c"># Find sprites in this layer</span>
+                <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;object&#39;</span><span class="p">):</span>
+                    <span class="n">new_layer</span><span class="o">.</span><span class="n">addObject</span><span class="p">(</span><span class="n">TileObject</span><span class="p">(</span>
+                        <span class="s">&#39;tile&#39;</span><span class="p">,</span> <span class="s">&#39;sprite&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">]),</span> 
+                        <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;width&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;height&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> 
+                        <span class="p">{},</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSpriteName</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;gid&#39;</span><span class="p">]))))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">object_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_layer</span><span class="p">)</span>
+                <span class="c">#</span>
+                <span class="c"># Find objects in this layer</span>
+                <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">layer</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;object&#39;</span><span class="p">):</span>
+                    <span class="n">new_layer</span><span class="o">.</span><span class="n">addObject</span><span class="p">(</span><span class="n">TileObject</span><span class="p">(</span>
+                        <span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">]),</span> 
+                        <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;width&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;height&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">getPropertiesFrom</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s">&#39;properties/property&#39;</span><span class="p">))))</span>
+
+<div class="viewcode-block" id="Tiled.getObjectLayers"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Tiled.getObjectLayers">[docs]</a>    <span class="k">def</span> <span class="nf">getObjectLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the object layers&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">object_layers</span>
+        
+
+            </div></div>
+<div class="viewcode-block" id="Layer"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer">[docs]</a><span class="k">class</span> <span class="nc">Layer</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A layer in a tilemap&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tiled</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">layer_type</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tiles</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">properties</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Layer&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiled</span> <span class="o">=</span> <span class="n">tiled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">=</span> <span class="n">layer_type</span>
+        <span class="c">#</span>
+        <span class="c"># Set initial size</span>
+        <span class="k">if</span> <span class="n">width</span> <span class="ow">and</span> <span class="n">height</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="k">elif</span> <span class="n">tiles</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tiles</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">tiles</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Must initialise Layer with either width, height or tiles&#39;</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Set the tiles</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tiles</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span> <span class="o">=</span> <span class="n">tiles</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c">#</span>
+        <span class="c"># Set properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="n">properties</span> <span class="k">if</span> <span class="n">properties</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            
+<div class="viewcode-block" id="Layer.getSize"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.getSize">[docs]</a>    <span class="k">def</span> <span class="nf">getSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the size of the layer&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Layer.addObject"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.addObject">[docs]</a>    <span class="k">def</span> <span class="nf">addObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add an object&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Layer.getObjects"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.getObjects">[docs]</a>    <span class="k">def</span> <span class="nf">getObjects</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all the objects&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects</span>
+</div>
+<div class="viewcode-block" id="Layer.getObject"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.getObject">[docs]</a>    <span class="k">def</span> <span class="nf">getObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the named object&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getObjects</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotFound</span><span class="p">(</span><span class="s">&#39;Could not find object &quot;</span><span class="si">%s</span><span class="s">&quot; in layer &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Layer.getSpriteFor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.getSpriteFor">[docs]</a>    <span class="k">def</span> <span class="nf">getSpriteFor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Return the sprite for a certain location&quot;&quot;&quot;</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Sprites</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiled</span><span class="o">.</span><span class="n">getSpriteName</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Layer.getLocationsWithTile"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.getLocationsWithTile">[docs]</a>    <span class="k">def</span> <span class="nf">getLocationsWithTile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all tile locations with a tile&quot;&quot;&quot;</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">y</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matches</span>
+</div>
+<div class="viewcode-block" id="Layer.getLocationsWithoutTile"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.getLocationsWithoutTile">[docs]</a>    <span class="k">def</span> <span class="nf">getLocationsWithoutTile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all tile locations without a tile&quot;&quot;&quot;</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">y</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">item</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matches</span>
+       
+</div>
+<div class="viewcode-block" id="Layer.iterCellLocations"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.Layer.iterCellLocations">[docs]</a>    <span class="k">def</span> <span class="nf">iterCellLocations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an interation of the cell locations&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">y</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>        
+
+
+
+
+                  </div></div>
+<div class="viewcode-block" id="TileObject"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.tiled.TileObject">[docs]</a><span class="k">class</span> <span class="nc">TileObject</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A tile&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">object_type</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">sprite_name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the tile&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">object_type</span> <span class="o">=</span> <span class="n">object_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sprite_name</span> <span class="o">=</span> <span class="n">sprite_name</span>
+        
+        <span class="c">#</span>
+        <span class="c"># Set properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">properties</span> <span class="o">=</span> <span class="n">properties</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">properties</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+<map id="inheritance33a8653ee8" name="inheritance33a8653ee8">
+<area shape="rect" id="node1" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle" alt="" coords="269,106,456,134"/>
+<area shape="rect" id="node7" href="#serge.actor.Actor" title="serge.actor.Actor" alt="" coords="511,55,641,83"/>
+<area shape="rect" id="node2" href="geometry.html#serge.geometry.SpatialObject" title="serge.geometry.SpatialObject" alt="" coords="5,81,216,109"/>
+<area shape="rect" id="node4" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="16,131,205,159"/>
+<area shape="rect" id="node6" href="common.html#serge.common.EventAware" title="serge.common.EventAware" alt="" coords="264,5,461,33"/>
+<area shape="rect" id="node8" href="common.html#serge.common.Loggable" title="serge.common.Loggable" alt="" coords="272,55,453,83"/>
+</map>

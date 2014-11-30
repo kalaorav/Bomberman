@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Physical &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="next" title="Events" href="events.html" />
+    <link rel="prev" title="Input" href="input.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="events.html" title="Events"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="input.html" title="Input"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="physical">
+<h1><a class="toc-backref" href="#id1">Physical</a><a class="headerlink" href="#physical" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#physical" id="id1">Physical</a><ul>
+<li><a class="reference internal" href="#physicalconditions" id="id2">PhysicalConditions</a></li>
+<li><a class="reference internal" href="#physicalbody" id="id3">PhysicalBody</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<span class="target" id="module-physical"></span><div class="section" id="physicalconditions">
+<h2><a class="toc-backref" href="#id2">PhysicalConditions</a><a class="headerlink" href="#physicalconditions" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-d42c1d42e08d913702243a08de56903821081ffa.png" alt="Inheritance diagram of serge.physical.PhysicalConditions" usemap="#inheritance71354c7038" class="inheritance"/>
+<map id="inheritance71354c7038" name="inheritance71354c7038">
+<area shape="rect" id="node1" href="#serge.physical.PhysicalConditions" title="serge.physical.PhysicalConditions" alt="" coords="245,5,480,33"/>
+<area shape="rect" id="node2" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="7,5,196,33"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.physical.PhysicalConditions">
+<em class="property">class </em><tt class="descclassname">serge.physical.</tt><tt class="descname">PhysicalConditions</tt><big>(</big><em>mass=0.0</em>, <em>radius=0.0</em>, <em>velocity=(0.0</em>, <em>0.0)</em>, <em>force=(0.0</em>, <em>0.0)</em>, <em>width=0.0</em>, <em>height=0.0</em>, <em>fixed=False</em>, <em>friction=0.1</em>, <em>elasticity=1.0</em>, <em>group=0</em>, <em>layers=-1</em>, <em>update_angle=False</em>, <em>visual_size=False</em><big>)</big><a class="reference internal" href="_modules/serge/physical.html#PhysicalConditions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.physical.PhysicalConditions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable"><tt class="xref py py-class docutils literal"><span class="pre">serge.serialize.Serializable</span></tt></a></p>
+<p>Represents physical parameters of an object</p>
+<p>This includes the mass, velocity, force applied, acceleration
+and the physical dimensions.</p>
+<dl class="method">
+<dt id="serge.physical.PhysicalConditions.init">
+<tt class="descname">init</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/physical.html#PhysicalConditions.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.physical.PhysicalConditions.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize from serialized form</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.physical.PhysicalConditions.setGeometry">
+<tt class="descname">setGeometry</tt><big>(</big><em>radius=None</em>, <em>width=None</em>, <em>height=None</em><big>)</big><a class="reference internal" href="_modules/serge/physical.html#PhysicalConditions.setGeometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.physical.PhysicalConditions.setGeometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the geometry</p>
+<p>You must specify either the radius or the width and height</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.physical.PhysicalConditions.updateFrom">
+<tt class="descname">updateFrom</tt><big>(</big><em>physical_conditions</em><big>)</big><a class="reference internal" href="_modules/serge/physical.html#PhysicalConditions.updateFrom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.physical.PhysicalConditions.updateFrom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the properties and our physics object</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="physicalbody">
+<h2><a class="toc-backref" href="#id3">PhysicalBody</a><a class="headerlink" href="#physicalbody" title="Permalink to this headline">¶</a></h2>
+<p class="graphviz">
+<img src="_images/inheritance-916ae18b430b5752743600c8d1b325c6908109ff.png" alt="Inheritance diagram of serge.physical.PhysicalBody" usemap="#inheritanceb6b2b81c84" class="inheritance"/>
+<map id="inheritanceb6b2b81c84" name="inheritanceb6b2b81c84">
+<area shape="rect" id="node1" href="#serge.physical.PhysicalConditions" title="serge.physical.PhysicalConditions" alt="" coords="245,5,480,33"/>
+<area shape="rect" id="node4" href="#serge.physical.PhysicalBody" title="serge.physical.PhysicalBody" alt="" coords="528,5,728,33"/>
+<area shape="rect" id="node2" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="7,5,196,33"/>
+</map>
+</p>
+<dl class="class">
+<dt id="serge.physical.PhysicalBody">
+<em class="property">class </em><tt class="descclassname">serge.physical.</tt><tt class="descname">PhysicalBody</tt><big>(</big><em>mass</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/serge/physical.html#PhysicalBody"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.physical.PhysicalBody" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#serge.physical.PhysicalConditions" title="serge.physical.PhysicalConditions"><tt class="xref py py-class docutils literal"><span class="pre">serge.physical.PhysicalConditions</span></tt></a></p>
+<p>Physical conditions for an infinitesimal object</p>
+<p>The object has no dimensions (shape) but still
+has mass etc.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Physical</a><ul>
+<li><a class="reference internal" href="#physicalconditions">PhysicalConditions</a></li>
+<li><a class="reference internal" href="#physicalbody">PhysicalBody</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="input.html"
+                        title="previous chapter">Input</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="events.html"
+                        title="next chapter">Events</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="events.html" title="Events"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="input.html" title="Input"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

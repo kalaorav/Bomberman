@@ -1,0 +1,817 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.visual &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.visual</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Classes to handle sprites and other visual items&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">serialize</span>
+<span class="kn">import</span> <span class="nn">registry</span>
+
+<span class="k">class</span> <span class="nc">BadSprite</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The sprite was not loaded&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">InvalidCell</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The sprite cell number was out of range&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">BadScale</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;An invalid scaling factor was used&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">InvalidJustification</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The justification was not recognized&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">NotAllFilesFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;Didn&#39;t find all the files when looking for a multi cell from files&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">BadFont</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The font was not loaded&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">InvalidNameList</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The name list did not match the sprite given&quot;&quot;&quot;</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Visual&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Store"><a class="viewcode-back" href="../../visual.html#serge.visual.Store">[docs]</a><span class="k">class</span> <span class="nc">Store</span><span class="p">(</span><span class="n">registry</span><span class="o">.</span><span class="n">GeneralStore</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores sprites&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">_registerItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">framerate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">running</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">rectangular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">one_direction</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a sprite&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Watch for special case h = -1 ... this is a multi cell</span>
+        <span class="k">if</span> <span class="n">h</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">registerFromFiles</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Reality heighteck</span>
+        <span class="k">if</span> <span class="n">zoom</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadScale</span><span class="p">(</span><span class="s">&#39;The zoom factor for sprite </span><span class="si">%s</span><span class="s"> was not &gt;= 0&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Special case of no filename - we want to specify this layer</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Load the image and work out the dimensions based on the number of cells</span>
+            <span class="c"># wide and high</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BadSprite</span><span class="p">(</span><span class="s">&#39;Failed to load sprite from &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+            <span class="c">#</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registerImage</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c">#</span>
+        <span class="c"># Remember the settings used to create the sprite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_items</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">s</span>
+
+    <span class="k">def</span> <span class="nf">_registerImage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register an image&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">zoom</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span><span class="o">*</span><span class="n">zoom</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span><span class="o">*</span><span class="n">zoom</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">angle</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span><span class="o">/</span><span class="n">w</span>        
+        <span class="n">height</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span><span class="o">/</span><span class="n">h</span>
+        <span class="c">#</span>
+        <span class="c"># Now load as a sprite sheet</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">Sprite</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadSprite</span><span class="p">(</span><span class="s">&#39;Failed to create sprite </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Set properties</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">framerate</span> <span class="o">=</span> <span class="n">framerate</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="n">running</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">rectangular</span> <span class="o">=</span> <span class="n">rectangular</span>   
+        <span class="n">s</span><span class="o">.</span><span class="n">loop</span> <span class="o">=</span> <span class="n">loop</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">one_direction</span> <span class="o">=</span> <span class="n">one_direction</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>         
+        <span class="c">#</span>
+        <span class="k">return</span> <span class="n">s</span>
+    
+<div class="viewcode-block" id="Store.registerFromFiles"><a class="viewcode-back" href="../../visual.html#serge.visual.Store.registerFromFiles">[docs]</a>    <span class="k">def</span> <span class="nf">registerFromFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">framerate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">running</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">rectangular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> 
+                            <span class="n">zoom</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">one_direction</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a multi cell sprite from a number of files</span>
+<span class="sd">        </span>
+<span class="sd">        The path should be a string with a single numerical substitution.</span>
+<span class="sd">        We will pass the numbers 1..number to this substitution to find</span>
+<span class="sd">        the names of the files.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Generate a composite image - load the first one to find the size</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span> <span class="o">%</span> <span class="n">start</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadSprite</span><span class="p">(</span><span class="s">&#39;Failed to load multi cell sprite from &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Get size</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>        
+        <span class="n">height</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Now create a canvas to load all the files onto</span>
+        <span class="n">canvas</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">number</span><span class="o">*</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">number</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="n">start</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">NotAllFilesFound</span><span class="p">(</span><span class="s">&#39;Failed to load multi cell sprite from &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+            <span class="n">canvas</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">((</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">width</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Ok, now create as if normal</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registerImage</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">canvas</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Special case of h = -1 to trigger logic in the registerItem method when we are recovering from</span>
+        <span class="c"># a serialize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_items</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">])</span>
+        <span class="c">#</span>
+        <span class="k">return</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="Store.registerMultipleItems"><a class="viewcode-back" href="../../visual.html#serge.visual.Store.registerMultipleItems">[docs]</a>    <span class="k">def</span> <span class="nf">registerMultipleItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rectangular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">one_direction</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a number of sprites from a single image</span>
+<span class="sd">        </span>
+<span class="sd">        The image must be a horizontal row of sprites and you must provide</span>
+<span class="sd">        a list of names the same size as the row of sprites. Each other sprites</span>
+<span class="sd">        will be created.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Reality check on the names</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">w</span><span class="o">*</span><span class="n">h</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidNameList</span><span class="p">(</span><span class="s">&#39;Name list length, </span><span class="si">%d</span><span class="s">, does not match sprite width, </span><span class="si">%d</span><span class="s">, (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">w</span><span class="p">,</span> <span class="n">names</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">InvalidNameList</span><span class="p">(</span><span class="s">&#39;Name list contains duplcate names (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">names</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Split into cells using a temporary sprite</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registerItem</span><span class="p">(</span><span class="s">&#39;__TEMP__&#39;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Now get the individual images out</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_registerImage</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">temp</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">)</span>
+        <span class="c"># Clean up</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="s">&#39;__TEMP__&#39;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Store.registerItemsFromPattern"><a class="viewcode-back" href="../../visual.html#serge.visual.Store.registerItemsFromPattern">[docs]</a>    <span class="k">def</span> <span class="nf">registerItemsFromPattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">framerate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">running</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">rectangular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">one_direction</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register all items matching a certain regular expression&quot;&quot;&quot;</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">item</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">registerItem</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span> 
+                <span class="n">item</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">framerate</span><span class="p">,</span> <span class="n">running</span><span class="p">,</span> <span class="n">rectangular</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="n">one_direction</span><span class="p">)</span>
+        
+         </div></div>
+<span class="n">Register</span> <span class="o">=</span> <span class="n">Store</span><span class="p">()</span> <span class="c"># Legacy name</span>
+<span class="n">Sprites</span> <span class="o">=</span> <span class="n">Register</span>
+
+
+<div class="viewcode-block" id="Drawing"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing">[docs]</a><span class="k">class</span> <span class="nc">Drawing</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents something to draw on the screen&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the drawing&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_flip</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span> <span class="o">=</span> <span class="bp">False</span>
+            
+<div class="viewcode-block" id="Drawing.setScale"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.setScale">[docs]</a>    <span class="k">def</span> <span class="nf">setScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the scaling to a certain factor&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaleBy</span><span class="p">(</span><span class="n">scale</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Drawing.scaleBy"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.scaleBy">[docs]</a>    <span class="k">def</span> <span class="nf">scaleBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale the image by a factor&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;scaleBy not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="Drawing.setAngle"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the rotation to a certain angle&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;setAngle not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Drawing.getAngle"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.getAngle">[docs]</a>    <span class="k">def</span> <span class="nf">getAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current angle&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span>
+</div>
+<div class="viewcode-block" id="Drawing.rotateBy"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.rotateBy">[docs]</a>    <span class="k">def</span> <span class="nf">rotateBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate by a certain amount&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getAngle</span><span class="p">()</span><span class="o">+</span><span class="n">angle</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Drawing.flipHorizontal"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.flipHorizontal">[docs]</a>    <span class="k">def</span> <span class="nf">flipHorizontal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flip the drawing horizontally&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;flipHorizontal not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Drawing.setHorizontalFlip"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.setHorizontalFlip">[docs]</a>    <span class="k">def</span> <span class="nf">setHorizontalFlip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the horizontal flip state&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_flip</span> <span class="o">!=</span> <span class="n">flip</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flipHorizontal</span><span class="p">()</span>
+            </div>
+<div class="viewcode-block" id="Drawing.flipVertical"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.flipVertical">[docs]</a>    <span class="k">def</span> <span class="nf">flipVertical</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flip the drawing vertically&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;flipVertical not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Drawing.setVerticalFlip"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.setVerticalFlip">[docs]</a>    <span class="k">def</span> <span class="nf">setVerticalFlip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flip</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the vertical flip state&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span> <span class="o">!=</span> <span class="n">flip</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flipVertical</span><span class="p">()</span>
+
+    <span class="c">### Rendering ###</span>
+        </div>
+<div class="viewcode-block" id="Drawing.renderTo"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;renderTo not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Drawing.setAlpha"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.setAlpha">[docs]</a>    <span class="k">def</span> <span class="nf">setAlpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the overall alpha&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;setAlpha not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_setAlphaForSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the alpha for a surface&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># (Not quite sure about all of this!)</span>
+        <span class="c"># Try to set the alpha and then if this fails drop back to slow method</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="o">*</span><span class="mi">255</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">surface</span><span class="o">.</span><span class="n">get_at</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="n">alpha</span><span class="o">*</span><span class="mi">255</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c">#</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">surface</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">a</span> <span class="o">=</span> <span class="n">surface</span><span class="o">.</span><span class="n">get_at</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span>
+                <span class="n">surface</span><span class="o">.</span><span class="n">set_at</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),(</span><span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">alpha</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">surface</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span>
+    <span class="nd">@alpha.setter</span>
+    <span class="k">def</span> <span class="nf">alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">setAlpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+    
+    <span class="c">### Copying ###</span>
+    
+<div class="viewcode-block" id="Drawing.getCopy"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.getCopy">[docs]</a>    <span class="k">def</span> <span class="nf">getCopy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a copy&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Drawing.setSize"><a class="viewcode-back" href="../../visual.html#serge.visual.Drawing.setSize">[docs]</a>    <span class="k">def</span> <span class="nf">setSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the size of the drawing directly&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&#39;setSize not implemented on </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="SurfaceDrawing"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing">[docs]</a><span class="k">class</span> <span class="nc">SurfaceDrawing</span><span class="p">(</span><span class="n">Drawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A visual object that renders to a surface. </span>
+<span class="sd">    </span>
+<span class="sd">    You can create an instance of this class and then write to its surface</span>
+<span class="sd">    or use this as a base class for your own class that will write</span>
+<span class="sd">    the surface.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the surface&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SurfaceDrawing</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearSurface</span><span class="p">()</span>
+            
+<div class="viewcode-block" id="SurfaceDrawing.getSurface"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.getSurface">[docs]</a>    <span class="k">def</span> <span class="nf">getSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return our surface&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span>
+</div>
+<div class="viewcode-block" id="SurfaceDrawing.clearSurface"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.clearSurface">[docs]</a>    <span class="k">def</span> <span class="nf">clearSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear the surface&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">setSurface</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="SurfaceDrawing.setSurface"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.setSurface">[docs]</a>    <span class="k">def</span> <span class="nf">setSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update our surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">surface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateDimensions</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span>
+        </div>
+<div class="viewcode-block" id="SurfaceDrawing.renderTo"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="SurfaceDrawing.scaleBy"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.scaleBy">[docs]</a>    <span class="k">def</span> <span class="nf">scaleBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale the image by a factor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">factor</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadScale</span><span class="p">(</span><span class="s">&#39;Scaling factor must be &gt;= 0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">*=</span> <span class="n">factor</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateDimensions</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="SurfaceDrawing.setAngle"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change the angle - returning the amount by which the sprite has shifted&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateDimensions</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_updateDimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the dimensions of the drawing&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>   
+
+<div class="viewcode-block" id="SurfaceDrawing.setSize"><a class="viewcode-back" href="../../visual.html#serge.visual.SurfaceDrawing.setSize">[docs]</a>    <span class="k">def</span> <span class="nf">setSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the size of the drawing directly&quot;&quot;&quot;</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">width</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateDimensions</span><span class="p">()</span>
+        
+        </div></div>
+<div class="viewcode-block" id="Sprite"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite">[docs]</a><span class="k">class</span> <span class="nc">Sprite</span><span class="p">(</span><span class="n">Drawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An object that gets drawn on the screen&quot;&quot;&quot;</span>
+    
+    <span class="c">#</span>
+    <span class="c"># This is the function used to rotate the sprite. You can change this to &quot;rotate&quot;</span>
+    <span class="c"># to get non-filtered rotations</span>
+    <span class="n">smooth_rotate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">scale</span> <span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotozoom</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="n">base_rotate</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">scale</span> <span class="p">:</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="n">rotate</span> <span class="o">=</span> <span class="n">smooth_rotate</span>
+    
+    <span class="c"># Set the following to True to allow caching of rotations of a sprite to the given number of degrees</span>
+    <span class="n">cache_rotations</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">cache_granularity</span> <span class="o">=</span> <span class="mf">1.0</span> 
+    
+<div class="viewcode-block" id="Sprite.getCopy"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.getCopy">[docs]</a>    <span class="k">def</span> <span class="nf">getCopy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a copy of this sprite&quot;&quot;&quot;</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">()</span>
+        <span class="n">new</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">framerate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loop</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_direction</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new</span>
+</div>
+<div class="viewcode-block" id="Sprite.setAlpha"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.setAlpha">[docs]</a>    <span class="k">def</span> <span class="nf">setAlpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the overall alpha&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cell</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setAlphaForSurface</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+</div>
+<div class="viewcode-block" id="Sprite.setImage"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.setImage">[docs]</a>    <span class="k">def</span> <span class="nf">setImage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">framerate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">running</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">one_direction</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the image of this sprite&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Store cells of the image for speed - use of the cache is determined by the</span>
+        <span class="c"># cache_rotations property</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cell_cache</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c">#</span>
+        <span class="c"># Store raw image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_cx</span> <span class="o">=</span> <span class="n">width</span><span class="o">/</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_cy</span><span class="o">=</span> <span class="n">height</span><span class="o">/</span><span class="mi">2</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">framerate</span> <span class="o">=</span> <span class="n">framerate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_time</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">framerate</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1000.0</span><span class="o">/</span><span class="n">framerate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="n">running</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loop</span> <span class="o">=</span> <span class="n">loop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">one_direction</span> <span class="o">=</span> <span class="n">one_direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="mf">1.0</span>
+        
+    <span class="c">### Cells ###</span>
+        </div>
+<div class="viewcode-block" id="Sprite.setCells"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.setCells">[docs]</a>    <span class="k">def</span> <span class="nf">setCells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the cells of the animation&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c">#</span>
+        <span class="c"># Have we cached this set of cells</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_rotations</span><span class="p">:</span>
+            <span class="n">granular_angle</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="o">//</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_granularity</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_granularity</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cell_cache</span><span class="p">[</span><span class="n">granular_angle</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="c"># Oh, well - not in the cache after all</span>
+                <span class="k">pass</span>
+        <span class="c">#</span>
+        <span class="c"># Make cells</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_height</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_width</span>
+            <span class="c">#</span>
+            <span class="n">raw_image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_image</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">col</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_width</span><span class="p">,</span> <span class="n">row</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_height</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_height</span><span class="p">)</span>
+                    <span class="n">img</span> <span class="o">=</span> <span class="n">raw_image</span><span class="o">.</span><span class="n">subsurface</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_flip</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span><span class="p">:</span>
+                        <span class="n">img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+                        <span class="n">img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">zoom</span><span class="p">)))</span>
+                    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span><span class="p">:</span>
+                        <span class="n">img</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">smoothscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+                        <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_rotations</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cell_cache</span><span class="p">[</span><span class="n">granular_angle</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span>
+</div>
+<div class="viewcode-block" id="Sprite.setSize"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.setSize">[docs]</a>    <span class="k">def</span> <span class="nf">setSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the size of the drawing directly&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">width</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+            </div>
+<div class="viewcode-block" id="Sprite.setCell"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.setCell">[docs]</a>    <span class="k">def</span> <span class="nf">setCell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the current cell number&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">number</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span> <span class="o">=</span> <span class="n">number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidCell</span><span class="p">(</span><span class="s">&#39;Cell number </span><span class="si">%d</span><span class="s"> is out of range for this sprite&#39;</span> <span class="o">%</span> <span class="n">number</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Sprite.getCell"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.getCell">[docs]</a>    <span class="k">def</span> <span class="nf">getCell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current cell number&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span>
+    </div>
+<div class="viewcode-block" id="Sprite.getNumberOfCells"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.getNumberOfCells">[docs]</a>    <span class="k">def</span> <span class="nf">getNumberOfCells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the number of animation cells&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+        
+    <span class="c">### Deformations ###</span>
+    </div>
+<div class="viewcode-block" id="Sprite.scaleBy"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.scaleBy">[docs]</a>    <span class="k">def</span> <span class="nf">scaleBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale the image by a factor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">factor</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadScale</span><span class="p">(</span><span class="s">&#39;Scaling factor must be &gt;= 0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zoom</span> <span class="o">*=</span> <span class="n">factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Sprite.setAngle"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Change the angle - returning the amount by which the sprite has shifted&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Sprite.flipHorizontal"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.flipHorizontal">[docs]</a>    <span class="k">def</span> <span class="nf">flipHorizontal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flip the drawing horizontally&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_flip</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontal_flip</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="Sprite.flipVertical"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.flipVertical">[docs]</a>    <span class="k">def</span> <span class="nf">flipVertical</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flip the drawing vertically&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span>    
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCells</span><span class="p">()</span>
+
+    <span class="c">### Rendering ###</span>
+        </div>
+<div class="viewcode-block" id="Sprite.renderTo"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Update current frame</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">framerate</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_time</span> <span class="o">+=</span> <span class="n">milliseconds</span>
+            <span class="c">#</span>
+            <span class="c"># Are we moving on to another frame</span>
+            <span class="n">move_frames</span><span class="p">,</span> <span class="n">remainder</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame_time</span><span class="p">)</span>
+            <span class="n">nframes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+            <span class="c">#</span>
+            <span class="c"># Are we moving at all?</span>
+            <span class="k">if</span> <span class="n">move_frames</span> <span class="o">&gt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_time</span> <span class="o">=</span> <span class="n">remainder</span>
+                <span class="c">#</span>
+                <span class="c"># Move on in cells</span>
+                <span class="n">new_virtual_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="o">*</span><span class="nb">int</span><span class="p">(</span><span class="n">move_frames</span><span class="p">)</span>
+                <span class="c">#</span>
+                <span class="c"># Map back to the real space</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span><span class="p">,</span> <span class="n">hit_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mapVirtualToRealCell</span><span class="p">(</span><span class="n">new_virtual_cell</span><span class="p">)</span>
+                <span class="c">#</span>
+                <span class="c"># Watch for hitting the end</span>
+                <span class="k">if</span> <span class="n">hit_end</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">loop</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_direction</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="c">#</span>
+        <span class="c"># Draw to the surface</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span><span class="p">],</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">_mapVirtualToRealCell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Map a virtual cell number to a real one</span>
+<span class="sd">        </span>
+<span class="sd">        Returns real_cell, hit_end</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+        <span class="n">hit_end</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">loop</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># No looping - over the ends moves to the end</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="n">nc</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">nc</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">n</span><span class="p">,</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># </span>
+            <span class="c"># Looping</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">one_direction</span><span class="p">:</span>
+                <span class="c">#</span>
+                <span class="c"># One direction, going past the ends maps back to the begining. We hit the end if we have an odd number</span>
+                <span class="c"># of multiples of the number of cells</span>
+                <span class="n">rn</span> <span class="o">=</span> <span class="n">n</span> <span class="o">%</span> <span class="n">nc</span>
+                <span class="k">return</span> <span class="n">rn</span><span class="p">,</span> <span class="p">((</span><span class="n">n</span> <span class="o">//</span> <span class="n">nc</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c">#</span>
+                <span class="c"># Going in both directions, map onto twice the cell space (0 reflects back so</span>
+                <span class="c"># use an absolute). We hit the end if we have an odd number</span>
+                <span class="c"># of multiples of the number of cells</span>
+                <span class="n">rn</span> <span class="o">=</span> <span class="n">n</span> <span class="o">%</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">nc</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">rn</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">rn</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rn</span><span class="p">)</span>
+                    <span class="n">hit_end</span> <span class="o">=</span> <span class="p">((</span><span class="n">rn</span> <span class="o">//</span> <span class="n">nc</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="c">#</span>
+                <span class="c"># Watch for going beyond the end. </span>
+                <span class="k">if</span> <span class="n">rn</span> <span class="o">&gt;=</span> <span class="n">nc</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="mi">2</span><span class="o">*</span><span class="n">nc</span><span class="o">-</span><span class="n">rn</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">rn</span><span class="p">,</span> <span class="n">hit_end</span>
+                
+
+<div class="viewcode-block" id="Sprite.resetAnimation"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.resetAnimation">[docs]</a>    <span class="k">def</span> <span class="nf">resetAnimation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">running</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the animation to the begining&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="n">running</span>
+    </div>
+<div class="viewcode-block" id="Sprite.getSurface"><a class="viewcode-back" href="../../visual.html#serge.visual.Sprite.getSurface">[docs]</a>    <span class="k">def</span> <span class="nf">getSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current surface&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span><span class="p">]</span>
+        
+                 </div></div>
+<div class="viewcode-block" id="Text"><a class="viewcode-back" href="../../visual.html#serge.visual.Text">[docs]</a><span class="k">class</span> <span class="nc">Text</span><span class="p">(</span><span class="n">Drawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Some text to display&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the text&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Text</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c"># </span>
+        <span class="c"># Hack - see below</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actor_parent</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">colour</span> <span class="o">=</span> <span class="n">colour</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">colour</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="p">(</span><span class="n">colour</span> <span class="o">+</span> <span class="p">(</span><span class="mi">255</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_size</span> <span class="o">=</span> <span class="n">font_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_path</span> <span class="o">=</span> <span class="n">Fonts</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="n">font_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font_path</span><span class="p">,</span> <span class="n">font_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">justify</span> <span class="o">=</span> <span class="n">justify</span>
+        
+<div class="viewcode-block" id="Text.setJustify"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.setJustify">[docs]</a>    <span class="k">def</span> <span class="nf">setJustify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">justify</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the justification&quot;&quot;&quot;</span>
+        <span class="n">setting</span> <span class="o">=</span> <span class="n">justify</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">setting</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;left&#39;</span><span class="p">,</span> <span class="s">&#39;center&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidJustification</span><span class="p">(</span><span class="s">&#39;Justification not recognized (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">justify</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">justify</span> <span class="o">=</span> <span class="n">setting</span>
+        </div>
+<div class="viewcode-block" id="Text.setText"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.setText">[docs]</a>    <span class="k">def</span> <span class="nf">setText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our text&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Break into lines and then render each one</span>
+        <span class="k">if</span> <span class="n">text</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="s">&#39; &#39;</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Find out how wide to make our surface</span>
+        <span class="n">max_length</span><span class="p">,</span> <span class="n">long_line</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([(</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">),</span> <span class="n">line</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">])</span>       
+        <span class="n">test_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">long_line</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">)</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="n">test_text</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Now make a surface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)),</span> <span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># And write all our text</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">height</span><span class="o">*</span><span class="n">idx</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Hack to get the actor to spot that we updated our width</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor_parent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actor_parent</span><span class="o">.</span><span class="n">resizeTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+</div>
+<div class="viewcode-block" id="Text.setColour"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.setColour">[docs]</a>    <span class="k">def</span> <span class="nf">setColour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">colour</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the colour&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">colour</span> <span class="o">=</span> <span class="n">colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+                </div>
+<div class="viewcode-block" id="Text.setFontSize"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.setFontSize">[docs]</a>    <span class="k">def</span> <span class="nf">setFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">font_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our font size&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">font_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font_path</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">font_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Text.setAlpha"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.setAlpha">[docs]</a>    <span class="k">def</span> <span class="nf">setAlpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set our alpha&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setAlphaForSurface</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        </div>
+<div class="viewcode-block" id="Text.renderTo"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">justify</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span><span class="p">:</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        </div>
+<div class="viewcode-block" id="Text.setAngle"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rotate our sprite by a certain angle&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Text.scaleBy"><a class="viewcode-back" href="../../visual.html#serge.visual.Text.scaleBy">[docs]</a>    <span class="k">def</span> <span class="nf">scaleBy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Scale our sprite by a certain certain amount&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setFontSize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">font_size</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span>
+        
+        
+<span class="c">### Fonts ###</span>
+
+</div></div>
+<div class="viewcode-block" id="FontStore"><a class="viewcode-back" href="../../visual.html#serge.visual.FontStore">[docs]</a><span class="k">class</span> <span class="nc">FontStore</span><span class="p">(</span><span class="n">registry</span><span class="o">.</span><span class="n">GeneralStore</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A store for fonts&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="FontStore.registerItem"><a class="viewcode-back" href="../../visual.html#serge.visual.FontStore.registerItem">[docs]</a>    <span class="k">def</span> <span class="nf">registerItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a font&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Special case for DEFAULT - we allow multiple registrations of</span>
+        <span class="c"># this one</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;DEFAULT&#39;</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">removeItem</span><span class="p">(</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FontStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">registerItem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_registerItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register the font&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Try to load a font - we are going to discard this but it is a good</span>
+        <span class="c"># check to see if we will be able to create a font later</span>
+        <span class="n">real_path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="n">real_path</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Try with actual path</span>
+            <span class="n">real_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="n">real_path</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BadFont</span><span class="p">(</span><span class="s">&#39;Failed to load font from &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Remember the settings used to create the sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_items</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">name</span><span class="p">,</span> <span class="n">real_path</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">real_path</span>
+        <span class="k">return</span> <span class="n">real_path</span>
+
+<div class="viewcode-block" id="FontStore.clearItems"><a class="viewcode-back" href="../../visual.html#serge.visual.FontStore.clearItems">[docs]</a>    <span class="k">def</span> <span class="nf">clearItems</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear the items</span>
+<span class="sd">        </span>
+<span class="sd">        Leaves the DEFAULT item in there if it is there.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">default</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">registry</span><span class="o">.</span><span class="n">UnknownItem</span><span class="p">:</span>
+            <span class="n">default</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FontStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">clearItems</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">default</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">registerItem</span><span class="p">(</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+        </div></div>
+<span class="n">Fonts</span> <span class="o">=</span> <span class="n">FontStore</span><span class="p">()</span>
+<span class="n">Fonts</span><span class="o">.</span><span class="n">registerItem</span><span class="p">(</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">get_default_font</span><span class="p">())</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

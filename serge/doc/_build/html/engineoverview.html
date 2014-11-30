@@ -1,0 +1,177 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Engine Overview &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="next" title="Engine" href="engine.html" />
+    <link rel="prev" title="Building Blocks" href="blocks.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="engine.html" title="Engine"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="blocks.html" title="Building Blocks"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="engine-overview">
+<h1>Engine Overview<a class="headerlink" href="#engine-overview" title="Permalink to this headline">¶</a></h1>
+<p>Serge is a game engine writen in Python on top of pygame.</p>
+<p class="graphviz">
+<img src="_images/graphviz-e105d178f146796d84ac12b606890fb9e5d18932.png" alt="digraph foo {
+    pygame -&gt; serge;
+    serge -&gt; blocks;
+    blocks -&gt; game;
+    serge -&gt; game;
+    pygame -&gt; game;
+}" />
+</p>
+<p>Typical game folder structure for a game.</p>
+<p class="graphviz">
+<img src="_images/graphviz-0adf03b837469c93904cfb93fe55dd097116c3d6.png" alt="digraph foo {
+    main -&gt; game;
+    main -&gt; graphics;
+    main -&gt; fonts;
+    main -&gt; sounds;
+    main -&gt; music;
+    main -&gt; dist;
+    main -&gt; serge;
+    serge -&gt; blocks;
+}" />
+</p>
+<p>Engine Structure.</p>
+<p class="graphviz">
+<img src="_images/graphviz-e2e822b8a37c9284baaff76adbf1821ec6eb1438.png" alt="digraph foo {
+    engine -&gt; world [label=&quot;∞&quot;];
+    world -&gt; zone [label=&quot;∞&quot;];
+    zone -&gt; actor [label=&quot;∞&quot;];
+    actor -&gt; visual [label=&quot;1&quot;];
+    engine -&gt; renderer [label=&quot;1&quot;];
+    renderer -&gt; layer [label=&quot;∞&quot;];
+    engine -&gt; mouse [label=&quot;1&quot;];
+    engine -&gt; keyboard [label=&quot;1&quot;];
+}" />
+</p>
+<p>Typical game flow.</p>
+<p class="actdiag">
+<img src="_images/actdiag-fc87f097c5ab00ddb68ee1091b95b8b7d891992a.png" alt="None" width="256" height="600" />
+</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="blocks.html"
+                        title="previous chapter">Building Blocks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="engine.html"
+                        title="next chapter">Engine</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="engine.html" title="Engine"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="blocks.html" title="Building Blocks"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

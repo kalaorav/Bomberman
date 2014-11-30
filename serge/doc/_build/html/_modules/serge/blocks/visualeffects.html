@@ -1,0 +1,300 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.visualeffects &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.visualeffects</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Visual effects&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">_arraytype</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">get_arraytype</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">_arraytype</span> <span class="o">==</span> <span class="s">&#39;numeric&#39;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">Numeric</span> <span class="kn">import</span> <span class="n">UInt8</span> <span class="k">as</span> <span class="n">uint8</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">Float32</span> <span class="k">as</span> <span class="n">float32</span><span class="p">,</span> <span class="n">Int32</span> <span class="k">as</span> <span class="n">int32</span>
+    <span class="k">elif</span> <span class="n">_arraytype</span> <span class="o">==</span> <span class="s">&#39;numpy&#39;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">uint8</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">float32</span><span class="p">,</span> <span class="n">int32</span>
+    <span class="n">Numeric</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">NotImplementedError</span><span class="p">):</span>
+    <span class="n">Numeric</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="kn">import</span> <span class="nn">serge.visual</span>
+<span class="kn">import</span> <span class="nn">serge.render</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;visual&#39;</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">Numeric</span><span class="p">:</span>
+    <span class="n">ShadowLayer</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">serge</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">Layer</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+<div class="viewcode-block" id="Shadow"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.Shadow">[docs]</a>    <span class="k">class</span> <span class="nc">Shadow</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">SurfaceDrawing</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a shadow from an image&quot;&quot;&quot;</span>
+        
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">colour</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Initialise the Shadow&quot;&quot;&quot;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">Shadow</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">source</span><span class="o">.</span><span class="n">get_size</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">createShadow</span><span class="p">()</span>
+            
+<div class="viewcode-block" id="Shadow.createShadow"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.Shadow.createShadow">[docs]</a>        <span class="k">def</span> <span class="nf">createShadow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Create the shadow now</span>
+<span class="sd">            </span>
+<span class="sd">            Most of the logic here from http://pygame.org/wiki/ShadowEffects</span>
+<span class="sd">            </span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="c">#</span>
+            <span class="c"># Create alpha of main image</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span>
+            <span class="n">ambience</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mi">255</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_colour</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">/</span><span class="mi">255</span>
+            <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">get_masks</span><span class="p">()[</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">image_alpha</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">pixels_alpha</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ambience</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">shadow_alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">image_alpha</span> <span class="o">*</span>
+                                    <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ambience</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">uint8</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">shadow_alpha</span> <span class="o">=</span> <span class="n">image_alpha</span>
+            <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">get_colorkey</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">image_alpha</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">array_colorkey</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+                <span class="n">image</span><span class="o">.</span><span class="n">unlock</span><span class="p">();</span> <span class="n">image</span><span class="o">.</span><span class="n">unlock</span><span class="p">()</span>  <span class="c"># pygame 1.7 bug (fixed in 1.8).</span>
+                <span class="n">surface_alpha</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_alpha</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">surface_alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="c"># Do what array_colorkey should have done: use surface alpha!</span>
+                    <span class="n">Numeric</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">image_alpha</span><span class="p">,</span> <span class="n">surface_alpha</span><span class="p">,</span> <span class="n">image_alpha</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ambience</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">shadow_alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">image_alpha</span> <span class="o">*</span>
+                                    <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ambience</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">uint</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">shadow_alpha</span> <span class="o">=</span> <span class="n">image_alpha</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">image_alpha</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_alpha</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">image_alpha</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">image_alpha</span> <span class="o">=</span> <span class="mi">255</span>
+                <span class="n">shadow_alpha</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">image_alpha</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">ambience</span><span class="p">))</span>
+            <span class="c">#</span>
+            <span class="c"># Make the shadow</span>
+            <span class="n">shadow</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
+            <span class="n">shading</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSurface</span><span class="p">()</span>
+            <span class="n">shading</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_colour</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">pixels_alpha</span><span class="p">(</span><span class="n">shading</span><span class="p">)[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_alpha</span>
+            <span class="n">shadow</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shading</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">pixels_alpha</span><span class="p">(</span><span class="n">shadow</span><span class="p">)[</span><span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">shadow_alpha</span>
+            <span class="c">#</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">surface</span> <span class="o">=</span> <span class="n">shadow</span>
+
+</div></div>
+<div class="viewcode-block" id="ShadowLayer"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.ShadowLayer">[docs]</a>    <span class="k">class</span> <span class="nc">ShadowLayer</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A layer that renders with a shadow beneath it&quot;&quot;&quot;</span>
+        
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Initialise the ShadowLayer&quot;&quot;&quot;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">ShadowLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span> <span class="o">=</span> <span class="n">offset</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+            
+<div class="viewcode-block" id="ShadowLayer.initSurface"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.ShadowLayer.initSurface">[docs]</a>        <span class="k">def</span> <span class="nf">initSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Initialise the surface&quot;&quot;&quot;</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">ShadowLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">initSurface</span><span class="p">(</span><span class="n">renderer</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shadow</span> <span class="o">=</span> <span class="n">Shadow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="ShadowLayer.render"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.ShadowLayer.render">[docs]</a>        <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">surface</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Render to a surface</span>
+<span class="sd">            </span>
+<span class="sd">            When rendering to the surface we first create our shadow then</span>
+<span class="sd">            render this to the surface followed by our normal rendering.</span>
+<span class="sd">            </span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_shadow</span><span class="o">.</span><span class="n">createShadow</span><span class="p">()</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_shadow</span><span class="o">.</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offset</span><span class="p">)</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">ShadowLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="FadingLayer"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.FadingLayer">[docs]</a><span class="k">class</span> <span class="nc">FadingLayer</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A layer that you can fade in and out&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the layer&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FadingLayer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visibility</span> <span class="o">=</span> <span class="mi">255</span>
+    
+<div class="viewcode-block" id="FadingLayer.postRender"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.FadingLayer.postRender">[docs]</a>    <span class="k">def</span> <span class="nf">postRender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;After rendering the surface&quot;&quot;&quot;</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">255</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">visibility</span>
+        <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getSurface</span><span class="p">()</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_RGBA_SUB</span><span class="p">)</span>   
+</div></div>
+<div class="viewcode-block" id="FadingScreen"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.FadingScreen">[docs]</a><span class="k">class</span> <span class="nc">FadingScreen</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fade in and out everything&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the layer&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visibility</span> <span class="o">=</span> <span class="mi">255</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getRenderer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">postRender</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="FadingScreen.postRender"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.FadingScreen.postRender">[docs]</a>    <span class="k">def</span> <span class="nf">postRender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;After rendering the surface&quot;&quot;&quot;</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mi">255</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">visibility</span>
+        <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">getSurface</span><span class="p">()</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_RGBA_SUB</span><span class="p">)</span>   
+</div>
+<div class="viewcode-block" id="FadingScreen.deleteFade"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.FadingScreen.deleteFade">[docs]</a>    <span class="k">def</span> <span class="nf">deleteFade</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the fade&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">unlinkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">postRender</span><span class="p">)</span>
+        
+        </div></div>
+<div class="viewcode-block" id="darkenSurf2"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.darkenSurf2">[docs]</a><span class="k">def</span> <span class="nf">darkenSurf2</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Darken the given surface by the given amount&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">numpy</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">pixels_alpha</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">rgbarray</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">array3d</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">src</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rgbarray</span><span class="p">)</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rgbarray</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="c"># Use the cross-fade technique (found in pygame documentation) to </span>
+    <span class="c"># darken the image.</span>
+    <span class="n">dest</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">dest</span> <span class="o">-</span> <span class="n">src</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">amount</span><span class="o">/</span><span class="mf">255.0</span><span class="p">)</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">src</span> <span class="o">+</span> <span class="n">diff</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">newsurf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">make_surface</span><span class="p">(</span><span class="n">new</span><span class="p">)</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+        <span class="c"># For some reason this occasionally fails - give up trying to darken</span>
+        <span class="c"># the image. We will end up with a bright person! Seems to be an error in pygame 1.9.1</span>
+        <span class="c"># http://archives.seul.org/pygame/users/Apr-2011/msg00072.html</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Convert Alpha issue on </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Try again?!</span>
+        <span class="c">#import pdb; a = pdb.Pdb()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">newsurf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">make_surface</span><span class="p">(</span><span class="n">new</span><span class="p">)</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">img</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Retrying seemed to succeed&#39;</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="n">pygame</span><span class="o">.</span><span class="n">surfarray</span><span class="o">.</span><span class="n">pixels_alpha</span><span class="p">(</span><span class="n">newsurf</span><span class="p">)[:]</span> <span class="o">=</span> <span class="n">alpha</span>
+    <span class="k">return</span> <span class="n">newsurf</span>       
+</div>
+<div class="viewcode-block" id="darkenSurf"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.darkenSurf">[docs]</a><span class="k">def</span> <span class="nf">darkenSurf</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Darken a surface&quot;&quot;&quot;</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">img</span><span class="o">.</span><span class="n">get_width</span><span class="p">(),</span> <span class="n">img</span><span class="o">.</span><span class="n">get_height</span><span class="p">()))</span>
+    <span class="n">mask</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">255</span><span class="o">-</span><span class="n">amount</span><span class="p">,</span> <span class="mi">255</span><span class="o">-</span><span class="n">amount</span><span class="p">,</span> <span class="mi">255</span><span class="o">-</span><span class="n">amount</span><span class="p">,</span> <span class="mi">255</span><span class="o">-</span><span class="n">amount</span><span class="p">))</span>
+    <span class="c">#</span>
+    <span class="n">new_img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">new_img</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_RGB_MULT</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="k">return</span> <span class="n">new_img</span>
+    </div>
+<div class="viewcode-block" id="fadeSurface"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualeffects.fadeSurface">[docs]</a><span class="k">def</span> <span class="nf">fadeSurface</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fade the given suface by an amount 0 to 255 - 0 is completely faded&quot;&quot;&quot;</span>
+    <span class="n">surface</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_RGBA_SUB</span><span class="p">)</span>    
+    <span class="k">return</span> <span class="n">surface</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

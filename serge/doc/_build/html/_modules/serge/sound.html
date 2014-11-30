@@ -1,0 +1,368 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.sound &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.sound</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;The sound classes&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">serialize</span>
+<span class="kn">import</span> <span class="nn">registry</span> 
+<span class="kn">import</span> <span class="nn">events</span>
+
+<span class="c">#</span>
+<span class="c"># Initialise the pygame sound subsystem</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">set_num_channels</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">NUM_AUDIO_CHANNELS</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">UnknownSound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The sound was not found&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">BadSound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;Could not load sound from&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="AudioRegistry"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry">[docs]</a><span class="k">class</span> <span class="nc">AudioRegistry</span><span class="p">(</span><span class="n">registry</span><span class="o">.</span><span class="n">GeneralStore</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">EventAware</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Registry for audio&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the registry&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AudioRegistry</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="AudioRegistry.play"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.play">[docs]</a>    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">loops</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Play a sound&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">loops</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="AudioRegistry.pause"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause all sounds&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="AudioRegistry.unpause"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.unpause">[docs]</a>    <span class="k">def</span> <span class="nf">unpause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unpause all sounds&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="AudioRegistry.toggle"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.toggle">[docs]</a>    <span class="k">def</span> <span class="nf">toggle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggle whether music or sound is playing or not&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isPaused</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unpause</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="AudioRegistry.isPaused"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.isPaused">[docs]</a>    <span class="k">def</span> <span class="nf">isPaused</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are paused&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span>
+</div>
+<div class="viewcode-block" id="AudioRegistry.update"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the registry looking for events&quot;&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="AudioRegistry.isPlaying"><a class="viewcode-back" href="../../sound.html#serge.sound.AudioRegistry.isPlaying">[docs]</a>    <span class="k">def</span> <span class="nf">isPlaying</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are playing&quot;&quot;&quot;</span>
+                    
+        </div></div>
+<span class="k">class</span> <span class="nc">Store</span><span class="p">(</span><span class="n">AudioRegistry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores sounds&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">_registerItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register the sound&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Load the sound</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sound</span> <span class="o">=</span> <span class="n">SoundItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadSound</span><span class="p">(</span><span class="s">&#39;Failed to load sound from &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        
+        <span class="c">#</span>
+        <span class="c"># Remember the settings used to create the sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_items</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">sound</span>
+        <span class="k">return</span> <span class="n">sound</span>
+    
+    <span class="k">def</span> <span class="nf">isPlaying</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are playing&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">get_busy</span><span class="p">()</span>
+        
+            
+<div class="viewcode-block" id="MusicStore"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore">[docs]</a><span class="k">class</span> <span class="nc">MusicStore</span><span class="p">(</span><span class="n">AudioRegistry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores music&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the store&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MusicStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">playing</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_playing</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">playlist</span> <span class="o">=</span> <span class="bp">None</span>
+        
+    <span class="k">def</span> <span class="nf">_registerItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register the music&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">BadSound</span><span class="p">(</span><span class="s">&#39;No music file &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Remember the settings used to create the music</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_items</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">MusicItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resolveFilename</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+<div class="viewcode-block" id="MusicStore.play"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.play">[docs]</a>    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">loops</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Play a sound&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MusicStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">loops</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">playing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+   </div>
+<div class="viewcode-block" id="MusicStore.pause"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause all sounds&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MusicStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">playing</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">playing</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MusicStore.unpause"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.unpause">[docs]</a>    <span class="k">def</span> <span class="nf">unpause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unpause all sounds&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MusicStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">unpause</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">playing</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">playing</span><span class="o">.</span><span class="n">unpause</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MusicStore.update"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the registry looking for events&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MusicStore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isPlaying</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_playing</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_TRACK_ENDED</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+            <span class="c">#</span>
+            <span class="c"># If playing a playlist then move to the next one</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">playing</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">playlist</span><span class="p">:</span>
+                <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">playlist</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">playlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_playing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">isPlaying</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MusicStore.isPlaying"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.isPlaying">[docs]</a>    <span class="k">def</span> <span class="nf">isPlaying</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are playing&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">get_busy</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MusicStore.isPlayingSong"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.isPlayingSong">[docs]</a>    <span class="k">def</span> <span class="nf">isPlayingSong</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the named song is playing&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">playing</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="MusicStore.setPlaylist"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.setPlaylist">[docs]</a>    <span class="k">def</span> <span class="nf">setPlaylist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set a playlist&quot;&quot;&quot;</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">item_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">item_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">playlist</span> <span class="o">=</span> <span class="n">item_list</span>
+        </div>
+<div class="viewcode-block" id="MusicStore.fadeout"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.fadeout">[docs]</a>    <span class="k">def</span> <span class="nf">fadeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fadeout the currently playing track&quot;&quot;&quot;</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">fadeout</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">playing</span> <span class="o">=</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="MusicStore.setVolume"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.setVolume">[docs]</a>    <span class="k">def</span> <span class="nf">setVolume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the volume&quot;&quot;&quot;</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="MusicStore.getVolume"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicStore.getVolume">[docs]</a>    <span class="k">def</span> <span class="nf">getVolume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the volume&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>
+
+           </div></div>
+<div class="viewcode-block" id="MusicItem"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicItem">[docs]</a><span class="k">class</span> <span class="nc">MusicItem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a music item&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the piece of music&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">path</span>   
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+    
+<div class="viewcode-block" id="MusicItem.play"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicItem.play">[docs]</a>    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loops</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Play the music&quot;&quot;&quot;</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">)</span>
+        <span class="n">Music</span><span class="o">.</span><span class="n">playing</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Music</span><span class="o">.</span><span class="n">isPaused</span><span class="p">():</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">loops</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="MusicItem.pause"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicItem.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause the music&quot;&quot;&quot;</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">True</span>
+                </div>
+<div class="viewcode-block" id="MusicItem.unpause"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicItem.unpause">[docs]</a>    <span class="k">def</span> <span class="nf">unpause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause the music&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">Music</span><span class="o">.</span><span class="n">playing</span> <span class="o">==</span> <span class="bp">self</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">unpause</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MusicItem.stop"><a class="viewcode-back" href="../../sound.html#serge.sound.MusicItem.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stop the music&quot;&quot;&quot;</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">music</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="n">Music</span><span class="o">.</span><span class="n">playing</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paused</span> <span class="o">=</span> <span class="bp">False</span>
+    
+    </div></div>
+<div class="viewcode-block" id="SoundItem"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem">[docs]</a><span class="k">class</span> <span class="nc">SoundItem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a sound item&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the sound&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="bp">None</span>
+        
+<div class="viewcode-block" id="SoundItem.play"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.play">[docs]</a>    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loops</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Play the music&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Sounds</span><span class="o">.</span><span class="n">isPaused</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">loops</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    </div>
+<div class="viewcode-block" id="SoundItem.pause"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause the music&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="SoundItem.unpause"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.unpause">[docs]</a>    <span class="k">def</span> <span class="nf">unpause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause the music&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">unpause</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="SoundItem.stop"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stop the music&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="SoundItem.set_volume"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.set_volume">[docs]</a>    <span class="k">def</span> <span class="nf">set_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volume</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the volume&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">set_volume</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="SoundItem.get_volume"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.get_volume">[docs]</a>    <span class="k">def</span> <span class="nf">get_volume</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the volume&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="SoundItem.fadeout"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.fadeout">[docs]</a>    <span class="k">def</span> <span class="nf">fadeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fadeout the sound&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sound</span><span class="o">.</span><span class="n">fadeout</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SoundItem.isPlaying"><a class="viewcode-back" href="../../sound.html#serge.sound.SoundItem.isPlaying">[docs]</a>    <span class="k">def</span> <span class="nf">isPlaying</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are playing&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">get_busy</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+            </div></div>
+<span class="n">Sounds</span> <span class="o">=</span> <span class="n">Store</span><span class="p">()</span>
+<span class="n">Music</span> <span class="o">=</span> <span class="n">MusicStore</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

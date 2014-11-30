@@ -1,0 +1,827 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.behaviours &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.behaviours</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Classes the implement behaviours&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">serge.actor</span>
+<span class="kn">import</span> <span class="nn">serge.engine</span>
+<span class="kn">import</span> <span class="nn">serge.common</span>
+<span class="kn">import</span> <span class="nn">serge.events</span>
+<span class="n">Vec2d</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">pymunk</span><span class="o">.</span><span class="n">Vec2d</span>
+
+<div class="viewcode-block" id="MissingBehaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.MissingBehaviour">[docs]</a><span class="k">class</span> <span class="nc">MissingBehaviour</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;Could not locate the behaviour&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="DuplicateBehaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.DuplicateBehaviour">[docs]</a><span class="k">class</span> <span class="nc">DuplicateBehaviour</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The behaviour was already recorded&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BehaviourNotPaused"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourNotPaused">[docs]</a><span class="k">class</span> <span class="nc">BehaviourNotPaused</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The behaviour was not paused&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BehaviourAlreadyPaused"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourAlreadyPaused">[docs]</a><span class="k">class</span> <span class="nc">BehaviourAlreadyPaused</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The behaviour was already paused&quot;&quot;&quot;</span>
+</div>
+<span class="n">B_FINISHED</span> <span class="o">=</span> <span class="s">&#39;finished&#39;</span> <span class="c"># A behaviour has run and can now be paused</span>
+<span class="n">B_COMPLETED</span> <span class="o">=</span> <span class="s">&#39;completed&#39;</span> <span class="c"># A behaviour can be removed</span>
+
+<span class="c">### Main classes for implementing behaviours ###</span>
+
+
+<div class="viewcode-block" id="BehaviourRecord"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord">[docs]</a><span class="k">class</span> <span class="nc">BehaviourRecord</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents a record of a requested behaviour&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">behaviour</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the record&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span> <span class="o">=</span> <span class="n">actor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_behaviour</span> <span class="o">=</span> <span class="n">behaviour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_running</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_complete</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">behaviour</span><span class="p">,</span> <span class="n">Behaviour</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_behaviour</span><span class="o">.</span><span class="n">record</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="n">nice_name</span> <span class="o">=</span> <span class="s">&#39;the game&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">nice_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BehaviourRecord.performBehaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.performBehaviour">[docs]</a>    <span class="k">def</span> <span class="nf">performBehaviour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform the actual behaviour&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviour</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">in</span> <span class="p">(</span><span class="n">B_FINISHED</span><span class="p">,</span> <span class="n">B_COMPLETED</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="n">B_COMPLETED</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">markComplete</span><span class="p">()</span>
+        </div>
+<div class="viewcode-block" id="BehaviourRecord.pause"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.pause">[docs]</a>    <span class="k">def</span> <span class="nf">pause</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause the behaviour&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_running</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BehaviourAlreadyPaused</span><span class="p">(</span><span class="s">&#39;The behaviour </span><span class="si">%s</span><span class="s"> was not paused&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BehaviourRecord.restart"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.restart">[docs]</a>    <span class="k">def</span> <span class="nf">restart</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restart the behaviour&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_running</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BehaviourNotPaused</span><span class="p">(</span><span class="s">&#39;The behaviour </span><span class="si">%s</span><span class="s"> was already running&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BehaviourRecord.matches"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.matches">[docs]</a>    <span class="k">def</span> <span class="nf">matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if this behaviour matches the actor and name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span> <span class="o">==</span> <span class="n">actor</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">==</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="BehaviourRecord.matchesName"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.matchesName">[docs]</a>    <span class="k">def</span> <span class="nf">matchesName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if this behaviour matches the name&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">==</span> <span class="n">name</span>
+</div>
+    <span class="k">def</span> <span class="nf">_getId</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an id to identify the behaviour&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id</span>
+        
+<div class="viewcode-block" id="BehaviourRecord.isRunning"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.isRunning">[docs]</a>    <span class="k">def</span> <span class="nf">isRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are running&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_running</span>
+    </div>
+<div class="viewcode-block" id="BehaviourRecord.markComplete"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.markComplete">[docs]</a>    <span class="k">def</span> <span class="nf">markComplete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mark the behaviour as complete</span>
+<span class="sd">        </span>
+<span class="sd">        The manage can now remove us and no longer try calling.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_complete</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="BehaviourRecord.isComplete"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.isComplete">[docs]</a>    <span class="k">def</span> <span class="nf">isComplete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we are complete&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_complete</span>
+                     </div>
+<div class="viewcode-block" id="BehaviourRecord.involvesActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourRecord.involvesActor">[docs]</a>    <span class="k">def</span> <span class="nf">involvesActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the behaviour involves the actor&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span> <span class="ow">is</span> <span class="n">actor</span>
+                         
+                         </div></div>
+<div class="viewcode-block" id="BehaviourManager"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager">[docs]</a><span class="k">class</span> <span class="nc">BehaviourManager</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manages the behaviour of multiple actors in a world&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the manager&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BehaviourManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span> <span class="o">=</span> <span class="p">{}</span>
+        
+<div class="viewcode-block" id="BehaviourManager.assignBehaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.assignBehaviour">[docs]</a>    <span class="k">def</span> <span class="nf">assignBehaviour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">behaviour</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assign a behaviour to an actor&quot;&quot;&quot;</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="n">BehaviourRecord</span><span class="p">(</span><span class="n">actor</span><span class="p">,</span> <span class="n">behaviour</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">_getId</span><span class="p">()</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DuplicateBehaviour</span><span class="p">(</span><span class="s">&#39;The behaviour </span><span class="si">%s</span><span class="s">,</span><span class="si">%s</span><span class="s"> was already recorded&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="p">,</span> <span class="n">behaviour</span><span class="p">))</span>
+        <span class="n">nice_name</span> <span class="o">=</span> <span class="s">&#39;the game&#39;</span> <span class="k">if</span> <span class="n">actor</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Assigned behaviour </span><span class="si">%s</span><span class="s"> to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">behaviour</span><span class="p">,</span> <span class="n">nice_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="p">[</span><span class="n">record</span><span class="o">.</span><span class="n">_getId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">record</span>
+        <span class="k">if</span> <span class="n">actor</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_REMOVED_FROM_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actorRemoved</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">record</span>
+        </div>
+<div class="viewcode-block" id="BehaviourManager.removeBehaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.removeBehaviour">[docs]</a>    <span class="k">def</span> <span class="nf">removeBehaviour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a particular behaviour&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Removing behaviour </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">record</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="p">[</span><span class="n">record</span><span class="o">.</span><span class="n">_getId</span><span class="p">()])</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingBehaviour</span><span class="p">(</span><span class="s">&#39;The behaviour </span><span class="si">%s</span><span class="s"> was not found&#39;</span> <span class="o">%</span> <span class="n">record</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BehaviourManager.removeBehaviours"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.removeBehaviours">[docs]</a>    <span class="k">def</span> <span class="nf">removeBehaviours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behaviours</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a list of behaviours&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">behaviour</span> <span class="ow">in</span> <span class="n">behaviours</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">removeBehaviour</span><span class="p">(</span><span class="n">behaviour</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="BehaviourManager.hasBehaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.hasBehaviour">[docs]</a>    <span class="k">def</span> <span class="nf">hasBehaviour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if we have a particular behaviour record&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BehaviourManager.removeBehaviourByName"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.removeBehaviourByName">[docs]</a>    <span class="k">def</span> <span class="nf">removeBehaviourByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the named behaviour for an actor based on its name&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">actor</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">removeBehaviour</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="k">raise</span> <span class="n">MissingBehaviour</span><span class="p">(</span><span class="s">&#39;Not behaviour named &quot;</span><span class="si">%s</span><span class="s">&quot; found for actor &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+</div>
+<div class="viewcode-block" id="BehaviourManager.removeBehavioursByName"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.removeBehavioursByName">[docs]</a>    <span class="k">def</span> <span class="nf">removeBehavioursByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the named behaviour for all actors based on a name&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">matchesName</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">removeBehaviour</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BehaviourManager.updateActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.updateActor">[docs]</a>    <span class="k">def</span> <span class="nf">updateActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform all our behaviours&quot;&quot;&quot;</span>
+        <span class="n">completed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Perform all the behaviours</span>
+        <span class="k">for</span> <span class="n">behaviour</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">behaviour</span><span class="o">.</span><span class="n">performBehaviour</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">behaviour</span><span class="o">.</span><span class="n">isComplete</span><span class="p">():</span>
+                <span class="n">completed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">behaviour</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeBehaviours</span><span class="p">(</span><span class="n">completed</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="BehaviourManager.pauseBehaviours"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.pauseBehaviours">[docs]</a>    <span class="k">def</span> <span class="nf">pauseBehaviours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause all behaviours with the name&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">matchesName</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="n">record</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BehaviourManager.restartBehaviours"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.BehaviourManager.restartBehaviours">[docs]</a>    <span class="k">def</span> <span class="nf">restartBehaviours</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restart all behaviours with the name&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">matchesName</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="n">record</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_actorRemoved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;An actor was removed from the world</span>
+<span class="sd">        </span>
+<span class="sd">        We should remove any behaviours linked to this actor.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">to_remove</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">behaviour</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_behaviours</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">behaviour</span><span class="o">.</span><span class="n">involvesActor</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+                <span class="n">to_remove</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">behaviour</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removeBehaviours</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="Behaviour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.Behaviour">[docs]</a><span class="k">class</span> <span class="nc">Behaviour</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all behaviours&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="bp">True</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Execute the behaviour&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            
+            
+<span class="c">### Some useful behaviours ###</span>
+</div>
+<div class="viewcode-block" id="SnapshotOnKey"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.SnapshotOnKey">[docs]</a><span class="k">class</span> <span class="nc">SnapshotOnKey</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Take a snapshot of the screen when the user presses a key&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_s</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span> <span class="n">location</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the ScreenShotOnKey&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SnapshotOnKey</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="n">overwrite</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keyboard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getKeyboard</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snapshots</span> <span class="o">=</span> <span class="mi">1</span>
+                
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check for screenshots&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keyboard</span><span class="o">.</span><span class="n">isClicked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">):</span>
+            <span class="n">surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">getSurface</span><span class="p">()</span>
+            <span class="n">rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+            <span class="c">#</span>
+            <span class="c"># Find the filename</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">,</span> <span class="s">&#39;screenshot-</span><span class="si">%d</span><span class="s">.png&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+                    <span class="k">break</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">snapshots</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c">#</span>
+            <span class="c"># Save file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Taking snapshot </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">subsurface</span><span class="p">(</span><span class="n">rect</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Unable to save snapshot &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">snapshots</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+</div>
+<div class="viewcode-block" id="MoveTowardsPoint"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.MoveTowardsPoint">[docs]</a><span class="k">class</span> <span class="nc">MoveTowardsPoint</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move an actor towards a point&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">x_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        You can limit the directions that will be moved by setting</span>
+<span class="sd">        x_speed or y_speed to be 0.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MoveTowardsPoint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span> <span class="o">=</span> <span class="n">x_speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span> <span class="o">=</span> <span class="n">y_speed</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the movement&quot;&quot;&quot;</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span><span class="p">)</span>
+        <span class="c">#   </span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dy</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="o">==</span> <span class="n">dy</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">B_COMPLETED</span>
+</div>
+<div class="viewcode-block" id="SpringTowardsPoint"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.SpringTowardsPoint">[docs]</a><span class="k">class</span> <span class="nc">SpringTowardsPoint</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move an actor towards a point as if on a spring&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">spring_constant</span><span class="p">,</span> <span class="n">damping</span><span class="p">,</span> <span class="n">dead_zone</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        We use Hooke&#39;s law - the force is proportional to the </span>
+<span class="sd">        displacement. Damping is based on the velocity </span>
+<span class="sd">        </span>
+<span class="sd">        The dead zone is the distance from the target at which we</span>
+<span class="sd">        stop trying to move</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SpringTowardsPoint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">Vec2d</span><span class="p">(</span><span class="o">*</span><span class="n">point</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spring_constant</span> <span class="o">=</span> <span class="n">spring_constant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_damping</span> <span class="o">=</span> <span class="n">damping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dead_zone</span> <span class="o">=</span> <span class="n">dead_zone</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v</span> <span class="o">=</span> <span class="n">Vec2d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the movement&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Forces</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">-</span> <span class="n">Vec2d</span><span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spring_constant</span><span class="o">*</span><span class="n">offset</span><span class="o">.</span><span class="n">length</span><span class="o">*</span><span class="n">offset</span><span class="o">.</span><span class="n">normalized</span><span class="p">()</span>
+        <span class="n">damping</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_damping</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_v</span>
+        <span class="c">#</span>
+        <span class="c"># Update velocity and position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v</span> <span class="o">+=</span> <span class="p">(</span><span class="n">force</span> <span class="o">+</span> <span class="n">damping</span><span class="p">)</span><span class="o">*</span><span class="n">interval</span><span class="o">/</span><span class="mf">1000.0</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v</span><span class="o">*</span><span class="n">interval</span><span class="o">/</span><span class="mf">1000.0</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">offset</span><span class="o">.</span><span class="n">length</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dead_zone</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">B_COMPLETED</span>
+
+</div>
+<div class="viewcode-block" id="MoveTowardsActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.MoveTowardsActor">[docs]</a><span class="k">class</span> <span class="nc">MoveTowardsActor</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move an actor towards another actor&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">x_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        You can limit the directions that will be moved by setting</span>
+<span class="sd">        x_speed or y_speed to be 0.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MoveTowardsActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">actor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span> <span class="o">=</span> <span class="n">x_speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span> <span class="o">=</span> <span class="n">y_speed</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the movement&quot;&quot;&quot;</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dx</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span><span class="p">)</span>
+        <span class="c">#   </span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">dy</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span><span class="p">)</span>
+     
+</div>
+<div class="viewcode-block" id="MoveWithMouse"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.MoveWithMouse">[docs]</a><span class="k">class</span> <span class="nc">MoveWithMouse</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move the actor with the mouse&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the MoveWithMouse&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MoveWithMouse</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span> <span class="o">=</span> <span class="n">actor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mouse</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getMouse</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move to the mouse position&quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">getScreenPos</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        </div>
+<div class="viewcode-block" id="AvoidActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.AvoidActor">[docs]</a><span class="k">class</span> <span class="nc">AvoidActor</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move away from an actor until you reach a certain distance&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">x_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        You can limit the directions that will be moved by setting</span>
+<span class="sd">        x_speed or y_speed to be 0.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AvoidActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">actor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span> <span class="o">=</span> <span class="n">x_speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span> <span class="o">=</span> <span class="n">y_speed</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the movement if we are within range&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Check if we are outside of the given distance</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span>
+        <span class="k">elif</span> <span class="n">dx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span>
+        <span class="c">#   </span>
+        <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span>
+        <span class="k">elif</span> <span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span>
+
+</div>
+<div class="viewcode-block" id="AvoidActorsWithTag"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.AvoidActorsWithTag">[docs]</a><span class="k">class</span> <span class="nc">AvoidActorsWithTag</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move away from multiple actors until you read a certain distance&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">x_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y_speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AvoidActorsWithTag</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span> <span class="o">=</span> <span class="n">distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span> <span class="o">=</span> <span class="n">x_speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span> <span class="o">=</span> <span class="n">y_speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="n">tag</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the movement if we are within range&quot;&quot;&quot;</span>
+        <span class="n">encroachers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">world</span><span class="o">.</span><span class="n">findActorsByTag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tag</span><span class="p">):</span>
+            <span class="c">#</span>
+            <span class="c"># Check if we are outside of the given distance</span>
+            <span class="k">if</span> <span class="n">target</span> <span class="o">!=</span> <span class="n">actor</span><span class="p">:</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">actor</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="n">encroachers</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">dist</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">target</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">encroachers</span><span class="p">:</span>
+            <span class="n">encroachers</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">encroachers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c">#</span>
+            <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span>
+            <span class="k">elif</span> <span class="n">dx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_speed</span>
+            <span class="c">#   </span>
+            <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span>
+            <span class="k">elif</span> <span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_speed</span>
+</div>
+<div class="viewcode-block" id="FlashFor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.FlashFor">[docs]</a><span class="k">class</span> <span class="nc">FlashFor</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Flash an actor on the screen</span>
+<span class="sd">    </span>
+<span class="sd">    When the actor is flashing the property flashing is True.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the FlashFor&quot;&quot;&quot;</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">flashing</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_time</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span> <span class="o">=</span> <span class="n">actor</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform the behaviour&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">-=</span> <span class="n">interval</span><span class="o">/</span><span class="mf">1000.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">flashing</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_time</span>
+            <span class="k">return</span> <span class="n">B_FINISHED</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">flashing</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">visible</span>
+</div>
+<div class="viewcode-block" id="Blink"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.Blink">[docs]</a><span class="k">class</span> <span class="nc">Blink</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Blink an actor on the screen&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the FlashFor&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_time</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span> <span class="o">=</span> <span class="n">actor</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform the behaviour&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">-=</span> <span class="n">interval</span><span class="o">/</span><span class="mf">1000.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actor</span><span class="o">.</span><span class="n">visible</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_time</span>
+
+            </div>
+<div class="viewcode-block" id="TwoOptions"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.TwoOptions">[docs]</a><span class="k">class</span> <span class="nc">TwoOptions</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A behaviour that chooses between two optional behaviours&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">selector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        b1 and b2 are the two behaviours that we want to choose between.</span>
+<span class="sd">        The selector function will be called by passing &#39;arg&#39; to it. The</span>
+<span class="sd">        selector should return True to activate b1, False for b2.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TwoOptions</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_b1</span> <span class="o">=</span> <span class="n">b1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_b2</span> <span class="o">=</span> <span class="n">b2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arg</span> <span class="o">=</span> <span class="n">arg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selector</span> <span class="o">=</span> <span class="n">selector</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the appropriate behaviour&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selector</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_arg</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_b1</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_b2</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="Optional"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.Optional">[docs]</a><span class="k">class</span> <span class="nc">Optional</span><span class="p">(</span><span class="n">TwoOptions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A behaviour that is turned on and off by an option&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behaviour</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">selector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        The selector function will be called by passing &#39;arg&#39; to it. The</span>
+<span class="sd">        selector should return True to activate the behaviour</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Optional</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">behaviour</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">:</span><span class="bp">None</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="n">selector</span><span class="p">)</span>         
+
+</div>
+<div class="viewcode-block" id="OneShotSequence"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.OneShotSequence">[docs]</a><span class="k">class</span> <span class="nc">OneShotSequence</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A behaviour that calls a sequence of other behaviours&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the OneShotSequence&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sequence</span> <span class="o">=</span> <span class="n">sequence</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_working_on</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_record</span> <span class="o">=</span> <span class="bp">None</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process the sequence&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_working_on</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sequence</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">B_COMPLETED</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">target_actor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_working_on</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sequence</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_record</span> <span class="o">=</span> <span class="n">BehaviourRecord</span><span class="p">(</span><span class="n">target_actor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_working_on</span><span class="p">,</span> <span class="s">&#39;oneshotsequence&#39;</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Call our first behaviour</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record</span><span class="o">.</span><span class="n">performBehaviour</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record</span><span class="o">.</span><span class="n">isComplete</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_working_on</span> <span class="o">=</span> <span class="bp">None</span>
+        
+
+
+<span class="c">### Control behaviours ###</span>
+
+</div>
+<div class="viewcode-block" id="KeyboardNSEW"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.KeyboardNSEW">[docs]</a><span class="k">class</span> <span class="nc">KeyboardNSEW</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move an actor in ordinal directions according to the keyboard</span>
+<span class="sd">    </span>
+<span class="sd">    Set the n, s, e and w to the keys you want to move the actor. If you</span>
+<span class="sd">    do not want any motion then set that direction to None. Set the speed</span>
+<span class="sd">    to be the amount to move per keypress.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">speed</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_UP</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_DOWN</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_RIGHT</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_LEFT</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">KeyboardNSEW</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_speed</span> <span class="o">=</span> <span class="n">speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_e</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w</span> <span class="o">=</span> <span class="n">w</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getKeyboard</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform the motion&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="o">.</span><span class="n">isDown</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n</span><span class="p">):</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="o">.</span><span class="n">isDown</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_s</span><span class="p">):</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_e</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="o">.</span><span class="n">isDown</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_e</span><span class="p">):</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="o">.</span><span class="n">isDown</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w</span><span class="p">):</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">)</span>        
+
+</div>
+<div class="viewcode-block" id="KeyboardNSEWToVectorCallback"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.KeyboardNSEWToVectorCallback">[docs]</a><span class="k">class</span> <span class="nc">KeyboardNSEWToVectorCallback</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calls a method with direction vector from ordinal directions according to the keyboard</span>
+<span class="sd">    </span>
+<span class="sd">    Set the n, s, e and w to the keys you want to move the actor. If you</span>
+<span class="sd">    do not want any motion then set that direction to None. Set the speed</span>
+<span class="sd">    to be the amount to move per keypress.</span>
+<span class="sd">    </span>
+<span class="sd">    This is useful when you want to move an object but you need to do</span>
+<span class="sd">    some preprocessing first. This behaviour will allow you to capture the</span>
+<span class="sd">    keypresses.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_KEY_CLICKED</span><span class="p">,</span> <span class="n">speed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+            <span class="n">n</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_UP</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_DOWN</span><span class="p">,</span> <span class="n">e</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_RIGHT</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_LEFT</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">KeyboardNSEWToVectorCallback</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_event_method</span> <span class="o">=</span> <span class="s">&#39;isDown&#39;</span> <span class="k">if</span> <span class="n">event</span> <span class="o">==</span> <span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_KEY_DOWN</span> <span class="k">else</span> <span class="s">&#39;isClicked&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_speed</span> <span class="o">=</span> <span class="n">speed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_s</span> <span class="o">=</span> <span class="n">s</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_e</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_w</span> <span class="o">=</span> <span class="n">w</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getKeyboard</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform the motion&quot;&quot;&quot;</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_method</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n</span><span class="p">):</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_method</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_s</span><span class="p">):</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_e</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_method</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_e</span><span class="p">):</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_method</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w</span><span class="p">):</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_speed</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="ow">or</span> <span class="n">dy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">((</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">))</span>
+
+        </div>
+<div class="viewcode-block" id="KeyboardQuit"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.KeyboardQuit">[docs]</a><span class="k">class</span> <span class="nc">KeyboardQuit</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Quit the game based on a keypress&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">KeyboardQuit</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getKeyboard</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check for the quit key&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keyboard</span><span class="o">.</span><span class="n">isDown</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Quit key pressed&#39;</span><span class="p">)</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+            
+            </div>
+<div class="viewcode-block" id="TimedCallback"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.TimedCallback">[docs]</a><span class="k">class</span> <span class="nc">TimedCallback</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A callback that gets called at a certain interval&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">callback</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_calls</span> <span class="o">=</span> <span class="mi">0</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check for the interval&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">+=</span> <span class="n">interval</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span>            
+            <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_number_calls</span> <span class="o">+=</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="TimedOneshotCallback"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.TimedOneshotCallback">[docs]</a><span class="k">class</span> <span class="nc">TimedOneshotCallback</span><span class="p">(</span><span class="n">TimedCallback</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A callback that gets called once and only once at an interval&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check for the interval&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TimedOneshotCallback</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_calls</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">B_COMPLETED</span>
+</div>
+<div class="viewcode-block" id="Delay"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.Delay">[docs]</a><span class="k">class</span> <span class="nc">Delay</span><span class="p">(</span><span class="n">TimedOneshotCallback</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A delay - just waits and then completes</span>
+<span class="sd">    </span>
+<span class="sd">    Usefor for sequences</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the delay&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Delay</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="bp">None</span><span class="p">)</span>
+        
+            </div>
+<div class="viewcode-block" id="ParallaxMotion"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.ParallaxMotion">[docs]</a><span class="k">class</span> <span class="nc">ParallaxMotion</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move one object in relation to another&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the ParallaxMotion&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sx</span> <span class="o">=</span> <span class="n">sx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sy</span> <span class="o">=</span> <span class="n">sy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ox</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oy</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">y</span>
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform the update&quot;&quot;&quot;</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ox</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">oy</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">dx</span> <span class="ow">or</span> <span class="n">dy</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">dx</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sx</span><span class="p">,</span> <span class="n">dy</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sy</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">x</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">oy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">y</span>
+            </div>
+<div class="viewcode-block" id="RemoveWhenOutOfRange"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.RemoveWhenOutOfRange">[docs]</a><span class="k">class</span> <span class="nc">RemoveWhenOutOfRange</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Remove an actor from the world when it is out of a certain range&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_range</span><span class="p">,</span> <span class="n">y_range</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the RemoveWhenOutOfRange&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RemoveWhenOutOfRange</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">(</span><span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">y_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check the actor is in range&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">serge</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">isInside</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Removed </span><span class="si">%s</span><span class="s"> because it was out of range&#39;</span> <span class="o">%</span> <span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">())</span>
+            <span class="n">world</span><span class="o">.</span><span class="n">scheduleActorRemoval</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">B_COMPLETED</span>        
+            </div>
+<div class="viewcode-block" id="ConstantVelocity"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.behaviours.ConstantVelocity">[docs]</a><span class="k">class</span> <span class="nc">ConstantVelocity</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Move an actor with a constant velocity&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the behaviour&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConstantVelocity</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">=</span> <span class="n">vx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">vy</span>    
+        
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the actor position&quot;&quot;&quot;</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vx</span> <span class="o">*</span> <span class="n">interval</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vy</span> <span class="o">*</span> <span class="n">interval</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
+        
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

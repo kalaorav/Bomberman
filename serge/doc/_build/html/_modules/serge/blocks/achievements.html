@@ -1,0 +1,501 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.achievements &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.achievements</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Represents achievements</span>
+
+<span class="sd">Achievements are badges that are assigned to the</span>
+<span class="sd">player as they play the game. An achievement is</span>
+<span class="sd">basically a condition that is met. When you meet</span>
+<span class="sd">the condition you get the badge.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">pygame</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">serge.serialize</span>
+<span class="kn">import</span> <span class="nn">serge.common</span>
+<span class="kn">import</span> <span class="nn">serge.blocks.actors</span>
+<span class="kn">import</span> <span class="nn">serge.blocks.layout</span>
+
+<span class="c"># Events</span>
+<span class="n">E_ACHIEVEMENT_MET</span> <span class="o">=</span> <span class="s">&#39;achievement-met&#39;</span>
+
+<div class="viewcode-block" id="DuplicateAchievement"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.DuplicateAchievement">[docs]</a><span class="k">class</span> <span class="nc">DuplicateAchievement</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;An achievement with this name already exists&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BadReport"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.BadReport">[docs]</a><span class="k">class</span> <span class="nc">BadReport</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;An error occured while evaluating the report&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BadTestType"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.BadTestType">[docs]</a><span class="k">class</span> <span class="nc">BadTestType</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The test type was not found&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BadCondition"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.BadCondition">[docs]</a><span class="k">class</span> <span class="nc">BadCondition</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The condition was not valid&quot;&quot;&quot;</span>
+
+</div>
+<div class="viewcode-block" id="Achievement"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.Achievement">[docs]</a><span class="k">class</span> <span class="nc">Achievement</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents an achievement&quot;&quot;&quot;</span>
+
+    <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the name of the achievement&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;description&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the description of the achievement&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;badge&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the badge sprite name of the achievement&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;secret&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether the achievement is secret or not&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;test_type&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the test type for the achievement&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">O</span><span class="p">(</span><span class="s">&#39;condition&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;the condition test for the achievement&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;condition_string&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the text of the condition test for the achievement&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;met&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether the achievement has been met&#39;</span><span class="p">),</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;when the achievement was met&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">badge</span><span class="p">,</span> <span class="n">secret</span><span class="p">,</span> <span class="n">test_type</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">condition_string</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the Achievement&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">badge</span> <span class="o">=</span> <span class="n">badge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secret</span> <span class="o">=</span> <span class="n">secret</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_type</span> <span class="o">=</span> <span class="n">test_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">met</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="o">=</span> <span class="n">condition</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">condition_string</span> <span class="o">=</span> <span class="n">condition_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        
+        
+<div class="viewcode-block" id="Achievement.init"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.Achievement.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the achievement from pickling&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Achievement</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_string</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BadCondition</span><span class="p">(</span><span class="s">&#39;Must specify condition or condition_string for achievement &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="s">&#39;lambda </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_string</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">BadCondition</span><span class="p">(</span><span class="s">&#39;Cannot create lambda from &quot;</span><span class="si">%s</span><span class="s">&quot; for achievement &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">condition_string</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_string</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">BadCondition</span><span class="p">(</span><span class="s">&#39;Cannot specify both condition and condition_string for achievement &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span>
+            </div>
+<div class="viewcode-block" id="Achievement.makeReport"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.Achievement.makeReport">[docs]</a>    <span class="k">def</span> <span class="nf">makeReport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make a report on this achievement&quot;&quot;&quot;</span>
+        <span class="c"># Short circuit if we are met</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">met</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">met</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadReport</span><span class="p">(</span><span class="s">&#39;Error evaluating achievement &quot;</span><span class="si">%s</span><span class="s">&quot; with </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">kw</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">met</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+            </div>
+<div class="viewcode-block" id="Achievement.isMet"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.Achievement.isMet">[docs]</a>    <span class="k">def</span> <span class="nf">isMet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if the achievement was met&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">met</span>
+              </div></div>
+<div class="viewcode-block" id="AchievementManager"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager">[docs]</a><span class="k">class</span> <span class="nc">AchievementManager</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">EventAware</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Manages all the achievements in the game&quot;&quot;&quot;</span>
+
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">O</span><span class="p">(</span><span class="s">&#39;achievements&#39;</span><span class="p">,</span> <span class="p">{},</span> <span class="s">&#39;the list of achievements&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the AchievementManager&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">achievements</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="AchievementManager.init"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementManager</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">achievement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAchievements</span><span class="p">():</span>
+            <span class="n">achievement</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="bp">None</span>
+        </div>
+<div class="viewcode-block" id="AchievementManager.registerAchievement"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.registerAchievement">[docs]</a>    <span class="k">def</span> <span class="nf">registerAchievement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">achievement</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register an achievement&quot;&quot;&quot;</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">achievement</span><span class="o">.</span><span class="n">test_type</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="n">achievement</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DuplicateAchievement</span><span class="p">(</span><span class="s">&#39;An achievement called &quot;</span><span class="si">%s</span><span class="s">&quot; with test &quot;</span><span class="si">%s</span><span class="s">&quot; already exists&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">achievement</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">achievement</span><span class="o">.</span><span class="n">test_type</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Registering new achievement &quot;</span><span class="si">%s</span><span class="s">&quot; with test &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">achievement</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">achievement</span><span class="o">.</span><span class="n">test_type</span><span class="p">))</span>
+            <span class="n">existing</span><span class="p">[</span><span class="n">achievement</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">achievement</span>
+</div>
+<div class="viewcode-block" id="AchievementManager.safeRegisterAchievement"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.safeRegisterAchievement">[docs]</a>    <span class="k">def</span> <span class="nf">safeRegisterAchievement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">achievement</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register an achievement and do not worry if it is already registered&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">registerAchievement</span><span class="p">(</span><span class="n">achievement</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">DuplicateAchievement</span><span class="p">:</span>
+            <span class="k">pass</span>
+            </div>
+<div class="viewcode-block" id="AchievementManager.makeReport"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.makeReport">[docs]</a>    <span class="k">def</span> <span class="nf">makeReport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_type</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make a report on achievements&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">achievements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievements</span><span class="p">[</span><span class="n">test_type</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">BadTestType</span><span class="p">(</span><span class="s">&#39;The test type &quot;</span><span class="si">%s</span><span class="s">&quot; was not found&#39;</span> <span class="o">%</span> <span class="n">test_type</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">for</span> <span class="n">achievement</span> <span class="ow">in</span> <span class="n">achievements</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">achievement</span><span class="o">.</span><span class="n">makeReport</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Achievement &quot;</span><span class="si">%s</span><span class="s">&quot; has been met&#39;</span> <span class="o">%</span> <span class="n">achievement</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">E_ACHIEVEMENT_MET</span><span class="p">,</span> <span class="n">achievement</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">saveAchievements</span><span class="p">()</span>
+                </div>
+<div class="viewcode-block" id="AchievementManager.getAchievements"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.getAchievements">[docs]</a>    <span class="k">def</span> <span class="nf">getAchievements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the list of achievements&quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">items</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="p">:</span> <span class="nb">cmp</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="AchievementManager.initialiseFromFile"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.initialiseFromFile">[docs]</a>    <span class="k">def</span> <span class="nf">initialiseFromFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise from the file&quot;&quot;&quot;</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="s">&#39;HOME&#39;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;win&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s">&#39;HOMEPATH&#39;</span>
+        <span class="n">the_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">the_filename</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Loading achievements from </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">the_filename</span><span class="p">)</span>
+            <span class="n">new_manager</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="n">the_filename</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">achievements</span> <span class="o">=</span> <span class="n">new_manager</span><span class="o">.</span><span class="n">achievements</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;New achievements file at </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">the_filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">the_filename</span>
+        </div>
+<div class="viewcode-block" id="AchievementManager.saveAchievements"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementManager.saveAchievements">[docs]</a>    <span class="k">def</span> <span class="nf">saveAchievements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Save achievements to a file&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">toFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="AchievementBanner"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementBanner">[docs]</a><span class="k">class</span> <span class="nc">AchievementBanner</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">MountableActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A banner to show an achievment&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">background_layer</span><span class="p">,</span> <span class="n">foreground_layer</span><span class="p">,</span> <span class="n">behaviours</span><span class="p">,</span> <span class="n">theme</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the AchievementBanner&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementBanner</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">getTheme</span><span class="p">(</span><span class="s">&#39;achievements&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getProperty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_layer</span> <span class="o">=</span> <span class="n">background_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span> <span class="o">=</span> <span class="n">foreground_layer</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">hider</span> <span class="o">=</span> <span class="n">behaviours</span><span class="o">.</span><span class="n">assignBehaviour</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">behaviours</span><span class="o">.</span><span class="n">TimedCallback</span><span class="p">(</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-duration&#39;</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hideMe</span><span class="p">),</span> <span class="s">&#39;hiding&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hider</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="AchievementBanner.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementBanner.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Added the banner to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementBanner</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span>
+        <span class="c">#</span>
+        <span class="c"># Create the widgets</span>
+        <span class="n">bg</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;background&#39;</span><span class="p">)</span>
+        <span class="n">bg</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">visualblocks</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">(</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-size&#39;</span><span class="p">),</span> 
+            <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-backcolour&#39;</span><span class="p">))</span>
+        <span class="n">bg</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">StringText</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-name&#39;</span><span class="p">,</span> <span class="s">&#39;Name&#39;</span><span class="p">,</span>
+            <span class="n">colour</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-colour&#39;</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-name-size&#39;</span><span class="p">),</span>
+            <span class="n">font_name</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-name&#39;</span><span class="p">),</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">name</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-name-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">StringText</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-description&#39;</span><span class="p">,</span> 
+            <span class="s">&#39;Description of the achievement as it</span><span class="se">\n</span><span class="s">is written down.&#39;</span><span class="p">,</span>
+            <span class="n">colour</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-colour&#39;</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-description-size&#39;</span><span class="p">),</span>
+            <span class="n">font_name</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-name&#39;</span><span class="p">),</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">description</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-description-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="n">graphic</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-graphic&#39;</span><span class="p">)</span>
+        <span class="n">graphic</span><span class="o">.</span><span class="n">setSpriteName</span><span class="p">(</span><span class="s">&#39;achievement&#39;</span><span class="p">)</span>
+        <span class="n">graphic</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="n">graphic</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">graphic</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-graphic-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">False</span>
+        </div>
+<div class="viewcode-block" id="AchievementBanner.meetAchievement"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementBanner.meetAchievement">[docs]</a>    <span class="k">def</span> <span class="nf">meetAchievement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">achievement</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;An achievement is met&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">achievement</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">achievement</span><span class="o">.</span><span class="n">description</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">hider</span><span class="o">.</span><span class="n">isRunning</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hider</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Showing achievement&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="AchievementBanner.hideMe"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementBanner.hideMe">[docs]</a>    <span class="k">def</span> <span class="nf">hideMe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Hide ourself&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hider</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Hiding achievement&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">False</span>
+</div></div>
+<div class="viewcode-block" id="AchievementStatus"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementStatus">[docs]</a><span class="k">class</span> <span class="nc">AchievementStatus</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">MountableActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A banner to show an achievment&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">background_layer</span><span class="p">,</span> <span class="n">foreground_layer</span><span class="p">,</span> <span class="n">achievement</span><span class="p">,</span> <span class="n">G</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the AchievementStatus&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementStatus</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">G</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_layer</span> <span class="o">=</span> <span class="n">background_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span> <span class="o">=</span> <span class="n">foreground_layer</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">achievement</span> <span class="o">=</span> <span class="n">achievement</span>
+        
+<div class="viewcode-block" id="AchievementStatus.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementStatus.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Added the banner to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementStatus</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span>
+        <span class="c">#</span>
+        <span class="c"># Create the widgets</span>
+        <span class="n">bg</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;background&#39;</span><span class="p">)</span>
+        <span class="n">bg</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">visualblocks</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">(</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-size&#39;</span><span class="p">),</span> 
+            <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-backcolour&#39;</span><span class="p">))</span>
+        <span class="n">bg</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">bg</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">StringText</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-name&#39;</span><span class="p">,</span> <span class="s">&#39;Name&#39;</span><span class="p">,</span>
+            <span class="n">colour</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-colour&#39;</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-name-size&#39;</span><span class="p">),</span>
+            <span class="n">font_name</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-name&#39;</span><span class="p">),</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">name</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-name-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">StringText</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-description&#39;</span><span class="p">,</span> 
+            <span class="s">&#39;Description of the achievement as it</span><span class="se">\n</span><span class="s">is written down.&#39;</span><span class="p">,</span>
+            <span class="n">colour</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-colour&#39;</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-description-size&#39;</span><span class="p">),</span>
+            <span class="n">font_name</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-name&#39;</span><span class="p">),</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">description</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-description-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graphic</span> <span class="o">=</span> <span class="n">graphic</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-graphic&#39;</span><span class="p">)</span>
+        <span class="n">graphic</span><span class="o">.</span><span class="n">setSpriteName</span><span class="p">(</span><span class="s">&#39;achievement&#39;</span><span class="p">)</span>
+        <span class="n">graphic</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="n">graphic</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">graphic</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-graphic-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">StringText</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner-time&#39;</span><span class="p">,</span>
+            <span class="s">&#39;Time achieved&#39;</span><span class="p">,</span> <span class="n">colour</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;time-colour&#39;</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;time-size&#39;</span><span class="p">),</span> <span class="n">font_name</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;banner-font-name&#39;</span><span class="p">),</span>
+            <span class="n">justify</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">foreground_layer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;time-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updateAchievement</span><span class="p">()</span>
+                </div>
+<div class="viewcode-block" id="AchievementStatus.updateAchievement"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementStatus.updateAchievement">[docs]</a>    <span class="k">def</span> <span class="nf">updateAchievement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the achievement view&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievement</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievement</span><span class="o">.</span><span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graphic</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievement</span><span class="o">.</span><span class="n">isMet</span><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">achievement</span><span class="o">.</span><span class="n">isMet</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#39;Achieved at </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">achievement</span><span class="o">.</span><span class="n">time</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+        </div></div>
+<div class="viewcode-block" id="AchievementsGrid"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementsGrid">[docs]</a><span class="k">class</span> <span class="nc">AchievementsGrid</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">ScreenActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A grid to show achievements&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">G</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the AchievementsGrid&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementsGrid</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="s">&#39;achievements&#39;</span><span class="p">,</span> <span class="s">&#39;grid&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="n">G</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">getManager</span><span class="p">()</span>
+                
+<div class="viewcode-block" id="AchievementsGrid.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementsGrid.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Added the grid to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AchievementsGrid</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span>
+        <span class="c">#</span>
+        <span class="c"># Logo</span>
+        <span class="n">logo</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">addSpriteActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="s">&#39;logo&#39;</span><span class="p">,</span> <span class="s">&#39;logo&#39;</span><span class="p">,</span> <span class="s">&#39;logo&#39;</span><span class="p">,</span> 
+            <span class="s">&#39;ui&#39;</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;logo-position&#39;</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Bg</span>
+        <span class="n">bg</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">addSpriteActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="s">&#39;bg&#39;</span><span class="p">,</span> <span class="s">&#39;bg&#39;</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;screen-background-sprite&#39;</span><span class="p">),</span> 
+            <span class="s">&#39;background&#39;</span><span class="p">,</span> <span class="n">G</span><span class="p">(</span><span class="s">&#39;screen-background-position&#39;</span><span class="p">))</span>        
+        <span class="c">#</span>
+        <span class="c"># The grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">addActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">Grid</span><span class="p">(</span><span class="s">&#39;grid&#39;</span><span class="p">,</span> <span class="s">&#39;grid&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;grid-size&#39;</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;grid-width&#39;</span><span class="p">),</span>
+                <span class="n">height</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;grid-height&#39;</span><span class="p">)),</span>
+            <span class="n">center_position</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;grid-position&#39;</span><span class="p">),</span> <span class="n">layer_name</span><span class="o">=</span><span class="s">&#39;ui&#39;</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Place things in grid</span>
+        <span class="k">for</span> <span class="n">achievement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">getAchievements</span><span class="p">():</span>
+            <span class="n">grid</span><span class="o">.</span><span class="n">autoAddActor</span><span class="p">(</span><span class="n">AchievementStatus</span><span class="p">(</span><span class="s">&#39;status&#39;</span><span class="p">,</span> <span class="s">&#39;status&#39;</span><span class="p">,</span> <span class="s">&#39;ui&#39;</span><span class="p">,</span> <span class="s">&#39;background&#39;</span><span class="p">,</span> <span class="n">achievement</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">G</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="n">world</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_ACTIVATE_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">updateAchievements</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">back</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">addActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">StringText</span><span class="p">(</span><span class="s">&#39;back&#39;</span><span class="p">,</span> <span class="s">&#39;back&#39;</span><span class="p">,</span>
+                <span class="s">&#39;Back&#39;</span><span class="p">,</span> <span class="n">colour</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;back-colour&#39;</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;back-font-size&#39;</span><span class="p">),</span> <span class="n">font_name</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;back-font-name&#39;</span><span class="p">)),</span>
+                <span class="n">center_position</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;back-position&#39;</span><span class="p">),</span> <span class="n">layer_name</span><span class="o">=</span><span class="s">&#39;ui&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_LEFT_CLICK</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">backToPreviousWorld</span><span class="p">(</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;back-sound&#39;</span><span class="p">)))</span>
+       </div>
+<div class="viewcode-block" id="AchievementsGrid.updateAchievements"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.AchievementsGrid.updateAchievements">[docs]</a>    <span class="k">def</span> <span class="nf">updateAchievements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update all achievements&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">status</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">getChildren</span><span class="p">():</span>
+            <span class="n">status</span><span class="o">.</span><span class="n">updateAchievement</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="addAchievementsWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.addAchievementsWorld">[docs]</a><span class="k">def</span> <span class="nf">addAchievementsWorld</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">theme</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a world for the achievements&quot;&quot;&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">getProperty</span>
+    <span class="c">#</span>
+    <span class="c"># The behaviour manager</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+    <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">createWorldsForEngine</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;achievements-screen&#39;</span><span class="p">])</span>
+    <span class="n">world</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">getWorld</span><span class="p">(</span><span class="s">&#39;achievements-screen&#39;</span><span class="p">)</span>
+    <span class="n">manager</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">behaviours</span><span class="o">.</span><span class="n">BehaviourManager</span><span class="p">(</span><span class="s">&#39;behaviours&#39;</span><span class="p">,</span> <span class="s">&#39;behaviours&#39;</span><span class="p">)</span>
+    <span class="n">world</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">manager</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="c"># The screen actor</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">AchievementsGrid</span><span class="p">(</span><span class="n">theme</span><span class="o">.</span><span class="n">getTheme</span><span class="p">(</span><span class="s">&#39;achievements&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">getProperty</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
+    <span class="n">world</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="c"># Snapshotting</span>
+    <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">screenshot</span><span class="p">:</span>
+        <span class="n">manager</span><span class="o">.</span><span class="n">assignBehaviour</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> 
+            <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">behaviours</span><span class="o">.</span><span class="n">SnapshotOnKey</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_s</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">G</span><span class="p">(</span><span class="s">&#39;screenshot-size&#39;</span><span class="p">)</span>
+                <span class="p">,</span><span class="n">overwrite</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s">&#39;screenshots&#39;</span><span class="p">),</span> <span class="s">&#39;screenshot&#39;</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="addAchievementsBannerToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.addAchievementsBannerToWorld">[docs]</a><span class="k">def</span> <span class="nf">addAchievementsBannerToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">front_layer</span><span class="p">,</span> <span class="n">back_layer</span><span class="p">,</span> <span class="n">theme</span><span class="p">,</span> <span class="n">manager</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a banner for achievements to the world&quot;&quot;&quot;</span>
+    <span class="n">banner</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">AchievementBanner</span><span class="p">(</span><span class="s">&#39;banner&#39;</span><span class="p">,</span> <span class="s">&#39;banner&#39;</span><span class="p">,</span> 
+        <span class="n">back_layer</span><span class="p">,</span> <span class="n">front_layer</span><span class="p">,</span> <span class="n">manager</span><span class="p">,</span> <span class="n">theme</span><span class="p">)</span>
+    <span class="n">world</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">banner</span><span class="p">)</span>
+    <span class="n">banner</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="o">*</span><span class="n">theme</span><span class="o">.</span><span class="n">getProperty</span><span class="p">(</span><span class="s">&#39;banner-position&#39;</span><span class="p">,</span> <span class="s">&#39;achievements&#39;</span><span class="p">))</span>
+    <span class="n">getManager</span><span class="p">()</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">achievements</span><span class="o">.</span><span class="n">E_ACHIEVEMENT_MET</span><span class="p">,</span> <span class="n">banner</span><span class="o">.</span><span class="n">meetAchievement</span><span class="p">)</span>
+
+
+<span class="c"># A global achievements manager        </span></div>
+<span class="n">_Manager</span> <span class="o">=</span> <span class="n">AchievementManager</span><span class="p">()</span>
+<div class="viewcode-block" id="getManager"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.getManager">[docs]</a><span class="k">def</span> <span class="nf">getManager</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">_Manager</span>
+</div>
+<div class="viewcode-block" id="initManager"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.achievements.initManager">[docs]</a><span class="k">def</span> <span class="nf">initManager</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Initialise and return the manager&quot;&quot;&quot;</span>
+    <span class="n">manager</span> <span class="o">=</span> <span class="n">getManager</span><span class="p">()</span>
+    <span class="n">manager</span><span class="o">.</span><span class="n">initialiseFromFile</span><span class="p">(</span><span class="s">&#39;.</span><span class="si">%s</span><span class="s">.achievements&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">manager</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

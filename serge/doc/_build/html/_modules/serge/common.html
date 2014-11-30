@@ -1,0 +1,329 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.common &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.common</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="n">version</span> <span class="o">=</span> <span class="s">&#39;0.3.4.1&#39;</span>
+
+<span class="c">#</span>
+<span class="c"># Number of channels of audio - pygame default is 8 but</span>
+<span class="c"># it looks like this can easily be reached and causes</span>
+<span class="c"># some sounds to cut out. The following number is large </span>
+<span class="c"># enough to avoid that.</span>
+<span class="n">NUM_AUDIO_CHANNELS</span> <span class="o">=</span> <span class="mi">32</span>
+
+<span class="c">#</span>
+<span class="c"># Look for Pymunk</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pymunk</span>
+    <span class="c">#</span>
+    <span class="c"># Looks like the following is not needed on pymunk 2.1</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pymunk</span><span class="p">,</span> <span class="s">&#39;init_pymunk&#39;</span><span class="p">):</span>
+        <span class="n">pymunk</span><span class="o">.</span><span class="n">init_pymunk</span><span class="p">()</span>
+    <span class="n">PYMUNK_OK</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">simplevecs</span> <span class="kn">as</span> <span class="nn">pymunk</span>
+    <span class="n">PYMUNK_OK</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="c"># The following needed for pygame and py2exe</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pygame._view</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+    
+<span class="n">DETAIL</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="k">class</span> <span class="nc">Filtering</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Filter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A nice filtering formatter than can show certain types of log&quot;&quot;&quot;</span>
+
+    <span class="n">not_allowed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span>
+    <span class="p">])</span>
+    
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Format the record&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">record</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_allowed</span>
+        
+<span class="n">filterer</span> <span class="o">=</span> <span class="n">Filtering</span><span class="p">()</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;serge&#39;</span><span class="p">)</span>
+<span class="n">hdlr</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+<span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s">&#39;[</span><span class="si">%(relativeCreated)6d</span><span class="s">] :: </span><span class="si">%(levelname)7s</span><span class="s"> </span><span class="si">%(name)20s</span><span class="s"> :: </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="n">hdlr</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">hdlr</span><span class="p">)</span> 
+<span class="n">logger</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">filterer</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">addFileLogging</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Add file logging&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">LOG_TO_FILE</span><span class="p">,</span> <span class="n">fhdlr</span>
+    <span class="n">LOG_TO_FILE</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">fhdlr</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s">&#39;log.txt&#39;</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">fhdlr</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    
+<span class="c">#logger.setLevel(logging.DEBUG)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">DETAIL</span><span class="p">)</span>
+<span class="c">#logger.setLevel(logging.ERROR)</span>
+
+<span class="k">def</span> <span class="nf">tb</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Return the traceback as a string&quot;&quot;&quot;</span>
+    <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_traceback</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_tb</span><span class="p">(</span><span class="n">exc_traceback</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">BaseError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A useful base class for errors&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialialise and add traceback&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BaseError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">text</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">+</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tb</span><span class="p">()))</span>
+
+<span class="n">LOG_TO_FILE</span> <span class="o">=</span> <span class="bp">False</span>
+        
+<span class="k">def</span> <span class="nf">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a new logger with the name&quot;&quot;&quot;</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">hdlr</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logger</span><span class="o">.</span><span class="n">level</span><span class="p">)</span>
+    <span class="n">l</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">filterer</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">LOG_TO_FILE</span><span class="p">:</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">fhdlr</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">l</span>
+
+
+<div class="viewcode-block" id="Loggable"><a class="viewcode-back" href="../../common.html#serge.common.Loggable">[docs]</a><span class="k">class</span> <span class="nc">Loggable</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A helper class that adds a logger to a class</span>
+<span class="sd">    </span>
+<span class="sd">    Each instance of the class will have a *log* attribute and can</span>
+<span class="sd">    use this to log output. The `log` attrbute is a logger with the</span>
+<span class="sd">    usual *debug*, *warn*, *info*, and *error* methods.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="Loggable.addLogger"><a class="viewcode-back" href="../../common.html#serge.common.Loggable.addLogger">[docs]</a>    <span class="k">def</span> <span class="nf">addLogger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a logger&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;log&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+
+</div></div>
+<span class="k">class</span> <span class="nc">EventNotLinked</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The event was not linked to a callback&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">EventNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The event was not a registered event&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">DuplicateEvent</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;An event was registered twice&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="EventAware"><a class="viewcode-back" href="../../common.html#serge.common.EventAware">[docs]</a><span class="k">class</span> <span class="nc">EventAware</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mixin class that allows objects to respond to events&quot;&quot;&quot;</span>
+
+    <span class="c"># Legacy flag - set to True to enforce only registered events</span>
+    <span class="n">strict</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="EventAware.initEvents"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.initEvents">[docs]</a>    <span class="k">def</span> <span class="nf">initEvents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the events system&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_event_handlers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_events</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="EventAware.registerEvent"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.registerEvent">[docs]</a>    <span class="k">def</span> <span class="nf">registerEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register an event&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_events</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DuplicateEvent</span><span class="p">(</span><span class="s">&#39;The event &quot;</span><span class="si">%s</span><span class="s">&quot; is already registered&#39;</span> <span class="o">%</span> <span class="n">event</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registered_events</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="EventAware.registerEvents"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.registerEvents">[docs]</a>    <span class="k">def</span> <span class="nf">registerEvents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register a number of events&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">registerEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="EventAware.registerEventsFromModule"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.registerEventsFromModule">[docs]</a>    <span class="k">def</span> <span class="nf">registerEventsFromModule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Register all events found in the module</span>
+<span class="sd">        </span>
+<span class="sd">        Events must be strings and their name must be of the </span>
+<span class="sd">        form E_THE_NAME</span>
+<span class="sd">        </span>
+<span class="sd">        ie: Begins with an &#39;E&#39; and is all uppercase</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">finder</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;E_[A-Z_]+$&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">finder</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">registerEvent</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+                          </div>
+<div class="viewcode-block" id="EventAware.processEvent"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.processEvent">[docs]</a>    <span class="k">def</span> <span class="nf">processEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Process an incoming event&quot;&quot;&quot;</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">obj</span> <span class="o">=</span> <span class="n">event</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_events</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EventNotFound</span><span class="p">(</span><span class="s">&#39;The event &quot;</span><span class="si">%s</span><span class="s">&quot; was not registered&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Try to pass this off to a handler</span>
+        <span class="n">inhibits</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">links</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_handlers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">new_inhibits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handleEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+            <span class="c"># Watch for new events to inhibit</span>
+            <span class="k">if</span> <span class="n">new_inhibits</span><span class="p">:</span>
+                <span class="n">inhibits</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_inhibits</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Process all the handler functions</span>
+            <span class="k">for</span> <span class="n">callback</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+                <span class="n">new_inhibits</span> <span class="o">=</span> <span class="n">callback</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+                <span class="c"># Watch for new events to inhibit</span>
+                <span class="k">if</span> <span class="n">new_inhibits</span><span class="p">:</span>
+                    <span class="n">inhibits</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">new_inhibits</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">inhibits</span>
+        </div>
+<div class="viewcode-block" id="EventAware.handleEvent"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.handleEvent">[docs]</a>    <span class="k">def</span> <span class="nf">handleEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle an incoming event&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    </div>
+<div class="viewcode-block" id="EventAware.linkEvent"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.linkEvent">[docs]</a>    <span class="k">def</span> <span class="nf">linkEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">arg</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Link an event to a callback&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_events</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EventNotFound</span><span class="p">(</span><span class="s">&#39;The event &quot;</span><span class="si">%s</span><span class="s">&quot; was not registered&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_event_handlers</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">callback</span><span class="p">,</span> <span class="n">arg</span><span class="p">))</span>
+        </div>
+<div class="viewcode-block" id="EventAware.unlinkEvent"><a class="viewcode-back" href="../../common.html#serge.common.EventAware.unlinkEvent">[docs]</a>    <span class="k">def</span> <span class="nf">unlinkEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unlink an event from a callback&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registered_events</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EventNotFound</span><span class="p">(</span><span class="s">&#39;The event &quot;</span><span class="si">%s</span><span class="s">&quot; was not registered&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">del</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_event_handlers</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">EventNotLinked</span><span class="p">(</span><span class="s">&#39;No links to event &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Look for items with the same name and callback</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">old_items</span><span class="p">,</span> <span class="n">new_items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_handlers</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="p">[]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">EventNotLinked</span><span class="p">(</span><span class="s">&#39;No links to event &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+            <span class="c">#                </span>
+            <span class="k">for</span> <span class="n">the_callback</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">old_items</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">the_callback</span> <span class="o">!=</span> <span class="n">callback</span><span class="p">:</span>
+                    <span class="c"># This one is ok</span>
+                    <span class="n">new_items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">the_callback</span><span class="p">,</span> <span class="n">arg</span><span class="p">))</span>
+            <span class="c">#</span>
+            <span class="c"># Were any changed?</span>
+            <span class="k">if</span> <span class="n">old_items</span> <span class="o">==</span> <span class="n">new_items</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">EventNotLinked</span><span class="p">(</span><span class="s">&#39;No links for event &quot;</span><span class="si">%s</span><span class="s">&quot; with callback &quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">callback</span><span class="p">))</span>
+            <span class="c">#</span>
+            <span class="c"># Reset events</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_event_handlers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_items</span>
+        </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

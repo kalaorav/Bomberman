@@ -1,0 +1,259 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.physical &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.physical</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Classes to help with physical body interaction&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">common</span> <span class="kn">import</span> <span class="n">pymunk</span>
+<span class="kn">import</span> <span class="nn">serialize</span>
+
+<span class="k">class</span> <span class="nc">InvalidDimensions</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The dimensions specified for conditions were inconsistent&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">InvalidMass</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;Must be either fixed or have a mass&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="PhysicalConditions"><a class="viewcode-back" href="../../physical.html#serge.physical.PhysicalConditions">[docs]</a><span class="k">class</span> <span class="nc">PhysicalConditions</span><span class="p">(</span><span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents physical parameters of an object</span>
+<span class="sd">    </span>
+<span class="sd">    This includes the mass, velocity, force applied, acceleration</span>
+<span class="sd">    and the physical dimensions.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;mass&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s">&#39;the mass of the object&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;velocity&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span> <span class="s">&#39;the velocity of the object&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;force&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">),</span> <span class="s">&#39;the force on the object&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;radius&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s">&#39;the radius of the object&#39;</span><span class="p">),</span>        
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;width&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s">&#39;the width of the object&#39;</span><span class="p">),</span>        
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;height&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s">&#39;the height of the object&#39;</span><span class="p">),</span>        
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;friction&#39;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s">&#39;the friction the object&#39;</span><span class="p">),</span>        
+        <span class="n">serialize</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="s">&#39;elasticity&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;the elasticity of the object&#39;</span><span class="p">),</span>      
+        <span class="n">serialize</span><span class="o">.</span><span class="n">I</span><span class="p">(</span><span class="s">&#39;layers&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;the collision layers that we are in&#39;</span><span class="p">),</span>  
+        <span class="n">serialize</span><span class="o">.</span><span class="n">I</span><span class="p">(</span><span class="s">&#39;group&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;the collision group that we are in&#39;</span><span class="p">),</span>  
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;fixed&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether the object is fixed in place&#39;</span><span class="p">),</span> 
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;update_angle&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether the rotation of the body should propagate to the actors visual&#39;</span><span class="p">),</span> 
+        <span class="n">serialize</span><span class="o">.</span><span class="n">B</span><span class="p">(</span><span class="s">&#39;visual_size&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="s">&#39;whether to set the size based on the visual element of our parent actor&#39;</span><span class="p">),</span> 
+    <span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">velocity</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">force</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                    <span class="n">friction</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">elasticity</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">layers</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">update_angle</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">visual_size</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the conditions&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mass</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">fixed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidMass</span><span class="p">(</span><span class="s">&#39;Mass must be specified unless the object is fixed in place&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mass</span> <span class="o">=</span> <span class="n">mass</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">fixed</span> <span class="k">else</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">inf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">velocity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force</span> <span class="o">=</span> <span class="n">force</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span> <span class="o">=</span> <span class="n">fixed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">friction</span> <span class="o">=</span> <span class="n">friction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elasticity</span> <span class="o">=</span> <span class="n">elasticity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_angle</span> <span class="o">=</span> <span class="n">update_angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual_size</span> <span class="o">=</span> <span class="n">visual_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="n">group</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">visual_size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PhysicalConditions.init"><a class="viewcode-back" href="../../physical.html#serge.physical.PhysicalConditions.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize from serialized form&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicalConditions</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_createPhysicsObject</span><span class="p">()</span>
+                </div>
+<div class="viewcode-block" id="PhysicalConditions.setGeometry"><a class="viewcode-back" href="../../physical.html#serge.physical.PhysicalConditions.setGeometry">[docs]</a>    <span class="k">def</span> <span class="nf">setGeometry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the geometry</span>
+<span class="sd">        </span>
+<span class="sd">        You must specify either the radius or the width and height</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Reality check</span>
+        <span class="k">if</span> <span class="n">radius</span> <span class="ow">and</span> <span class="p">(</span><span class="n">width</span> <span class="ow">or</span> <span class="n">height</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidDimensions</span><span class="p">(</span><span class="s">&#39;Must specify radius or width &amp; height, not both&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">radius</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">width</span> <span class="ow">and</span> <span class="n">height</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidDimensions</span><span class="p">(</span><span class="s">&#39;Must specify width &amp; height&#39;</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="n">radius</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">geometry_type</span> <span class="o">=</span> <span class="s">&#39;circle&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">geometry_type</span> <span class="o">=</span> <span class="s">&#39;rectangle&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_createPhysicsObject</span><span class="p">()</span>
+            </div>
+    <span class="k">def</span> <span class="nf">_createPhysicsObject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a new physics object&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry_type</span> <span class="o">==</span> <span class="s">&#39;circle&#39;</span><span class="p">:</span>
+            <span class="n">inertia</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">moment_for_circle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inertia</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">moment_for_box</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">Body</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mass</span><span class="p">,</span> <span class="n">inertia</span><span class="p">)</span>
+        <span class="n">body</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span>
+        <span class="n">body</span><span class="o">.</span><span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">force</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry_type</span> <span class="o">==</span> <span class="s">&#39;circle&#39;</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">Circle</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#shape = pymunk.Poly(body, [(0, 0), (self.width, 0), </span>
+            <span class="c">#                           (self.width, self.height), (0, self.height)])</span>
+            <span class="n">w2</span><span class="p">,</span> <span class="n">h2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">pymunk</span><span class="o">.</span><span class="n">Poly</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="p">[(</span><span class="o">-</span><span class="n">w2</span><span class="p">,</span><span class="o">-</span><span class="n">h2</span><span class="p">),</span> <span class="p">(</span><span class="o">+</span><span class="n">w2</span><span class="p">,</span> <span class="o">-</span><span class="n">h2</span><span class="p">),</span> <span class="p">(</span><span class="o">+</span><span class="n">w2</span><span class="p">,</span> <span class="o">+</span><span class="n">h2</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">w2</span><span class="p">,</span> <span class="o">+</span><span class="n">h2</span><span class="p">)])</span>
+        <span class="c">#</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">elasticity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elasticity</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">collision_type</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span>
+        <span class="n">shape</span><span class="o">.</span><span class="n">friction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">friction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">body</span>
+
+<div class="viewcode-block" id="PhysicalConditions.updateFrom"><a class="viewcode-back" href="../../physical.html#serge.physical.PhysicalConditions.updateFrom">[docs]</a>    <span class="k">def</span> <span class="nf">updateFrom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">physical_conditions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the properties and our physics object&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">physical_conditions</span><span class="o">.</span><span class="n">velocity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force</span> <span class="o">=</span> <span class="n">physical_conditions</span><span class="o">.</span><span class="n">force</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">force</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">force</span>
+
+
+</div></div>
+<div class="viewcode-block" id="PhysicalBody"><a class="viewcode-back" href="../../physical.html#serge.physical.PhysicalBody">[docs]</a><span class="k">class</span> <span class="nc">PhysicalBody</span><span class="p">(</span><span class="n">PhysicalConditions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Physical conditions for an infinitesimal object</span>
+<span class="sd">    </span>
+<span class="sd">    The object has no dimensions (shape) but still</span>
+<span class="sd">    has mass etc.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mass</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the body&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># We create a body with a default shape but we will remove the shape from play</span>
+        <span class="c"># later</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicalBody</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">mass</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_createPhysicsObject</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the object</span>
+<span class="sd">        </span>
+<span class="sd">        This is where we remove the shape from play so that it doesn&#39;t</span>
+<span class="sd">        interact with anything.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">PhysicalBody</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_createPhysicsObject</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">None</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

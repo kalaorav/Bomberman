@@ -1,0 +1,460 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.utils &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.utils</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Some utilities that speed up common operations&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pygame</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="kn">import</span> <span class="nn">serge</span>
+<span class="kn">import</span> <span class="nn">serge.render</span>
+<span class="kn">import</span> <span class="nn">serge.actor</span>
+<span class="kn">import</span> <span class="nn">serge.world</span>
+
+<div class="viewcode-block" id="createLayers"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.createLayers">[docs]</a><span class="k">def</span> <span class="nf">createLayers</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">cls</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a number of layers in the engine using the given class of layer&quot;&quot;&quot;</span>
+    <span class="n">renderer</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">getRenderer</span><span class="p">()</span>
+    <span class="c">#</span>
+    <span class="c"># Find the right number of layers so that we can set the order correctly</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">renderer</span><span class="o">.</span><span class="n">getLayers</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">cls</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">renderer</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    </div>
+<div class="viewcode-block" id="createLayersForEngine"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.createLayersForEngine">[docs]</a><span class="k">def</span> <span class="nf">createLayersForEngine</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">layers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a number of layers to the engine</span>
+<span class="sd">    </span>
+<span class="sd">    The layers parameter is a list of layer names. The layers are added to</span>
+<span class="sd">    the renderer of the engine as successive layers in order.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">createLayers</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">Layer</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="createVirtualLayersForEngine"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.createVirtualLayersForEngine">[docs]</a><span class="k">def</span> <span class="nf">createVirtualLayersForEngine</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">layers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a number of virtual layers to the engine</span>
+<span class="sd">    </span>
+<span class="sd">    The layers parameter is a list of layer names. The layers are added to</span>
+<span class="sd">    the renderer of the engine as successive layers in order.</span>
+<span class="sd">    </span>
+<span class="sd">    The layers are created as virtual, meaning that this will render</span>
+<span class="sd">    quicker than the real layers version, although compositing</span>
+<span class="sd">    will not be possible.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">createLayers</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">VirtualLayer</span><span class="p">)</span>        
+        </div>
+<div class="viewcode-block" id="createWorldsForEngine"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.createWorldsForEngine">[docs]</a><span class="k">def</span> <span class="nf">createWorldsForEngine</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">worlds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a numer of worlds to the engine</span>
+<span class="sd">    </span>
+<span class="sd">    The words parameter is a list of names of the worlds to create.</span>
+<span class="sd">    Each world is created with a single active zone which is quite</span>
+<span class="sd">    large.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">worlds</span><span class="p">:</span>
+        <span class="n">world</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">world</span><span class="o">.</span><span class="n">World</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">zone</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">zone</span><span class="o">.</span><span class="n">Zone</span><span class="p">()</span>
+        <span class="n">zone</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">zone</span><span class="o">.</span><span class="n">setSpatial</span><span class="p">(</span><span class="o">-</span><span class="mi">2000</span><span class="p">,</span> <span class="o">-</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">4000</span><span class="p">,</span> <span class="mi">4000</span><span class="p">)</span>
+        <span class="n">world</span><span class="o">.</span><span class="n">addZone</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+        <span class="n">engine</span><span class="o">.</span><span class="n">addWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        
+</div>
+<div class="viewcode-block" id="addActorToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.addActorToWorld">[docs]</a><span class="k">def</span> <span class="nf">addActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">sprite_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">layer_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">center_position</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">physics</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a new actor in the world</span>
+<span class="sd">    </span>
+<span class="sd">    If the center position is not specified then it is placed at the center of the screen.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#</span>
+    <span class="c"># If not position then put at the center</span>
+    <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">center_position</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getRenderer</span><span class="p">()</span>
+        <span class="n">center_position</span> <span class="o">=</span> <span class="p">(</span><span class="n">renderer</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">renderer</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="c"># Create the new actor</span>
+    <span class="k">if</span> <span class="n">sprite_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">setSpriteName</span><span class="p">(</span><span class="n">sprite_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">layer_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">physics</span><span class="p">:</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">setPhysical</span><span class="p">(</span><span class="n">physics</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">center_position</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="o">*</span><span class="n">center_position</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">setOrigin</span><span class="p">(</span><span class="o">*</span><span class="n">origin</span><span class="p">)</span>
+    <span class="n">world</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">actor</span>
+
+</div>
+<div class="viewcode-block" id="addSpriteActorToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.addSpriteActorToWorld">[docs]</a><span class="k">def</span> <span class="nf">addSpriteActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sprite_name</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">center_position</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">physics</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a new actor in the world and set the visual to be the named sprite</span>
+<span class="sd">    </span>
+<span class="sd">    If the center position is not specified then it is placed at the center of the screen.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#</span>
+    <span class="c"># Create the new actor</span>
+    <span class="n">actor</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">addActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">sprite_name</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">center_position</span><span class="p">,</span> <span class="n">physics</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="addVisualActorToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.addVisualActorToWorld">[docs]</a><span class="k">def</span> <span class="nf">addVisualActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">visual</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">center_position</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">physics</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a new actor in the world and set the visual </span>
+<span class="sd">    </span>
+<span class="sd">    If the center position is not specified then it is placed at the center of the screen.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#</span>
+    <span class="c"># Create the new actor</span>
+    <span class="n">actor</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">actor</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">visual</span>
+    <span class="k">return</span> <span class="n">addActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">center_position</span><span class="p">,</span> <span class="n">physics</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="addTextToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.addTextToWorld">[docs]</a><span class="k">def</span> <span class="nf">addTextToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">theme</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add some text to the world&quot;&quot;&quot;</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">getProperty</span>
+    <span class="n">actor</span> <span class="o">=</span> <span class="n">addVisualActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="s">&#39;text&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> 
+                <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">L</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-colour&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">),</span> 
+                    <span class="n">font_size</span><span class="o">=</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-font-size&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">),</span>
+                    <span class="n">font_name</span><span class="o">=</span><span class="n">theme</span><span class="o">.</span><span class="n">getPropertyWithDefault</span><span class="p">((</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-font&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">),</span> <span class="s">&#39;DEFAULT&#39;</span><span class="p">)),</span> 
+                <span class="n">layer_name</span><span class="p">,</span> 
+                <span class="n">center_position</span><span class="o">=</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-position&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">actor</span>
+</div>
+<div class="viewcode-block" id="addTextItemsToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.addTextItemsToWorld">[docs]</a><span class="k">def</span> <span class="nf">addTextItemsToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">theme</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add multiple text items to the world&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">text</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">callback</span> <span class="o">=</span> <span class="bp">None</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">item</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">actor</span> <span class="o">=</span> <span class="n">addTextToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">theme</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">callback</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_LEFT_CLICK</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>    
+
+</div>
+<div class="viewcode-block" id="addMuteButtonToWorlds"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.addMuteButtonToWorlds">[docs]</a><span class="k">def</span> <span class="nf">addMuteButtonToWorlds</span><span class="p">(</span><span class="n">button</span><span class="p">,</span> <span class="n">center_position</span><span class="p">,</span> <span class="n">world_names</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add a particular mute button to various worlds</span>
+<span class="sd">    </span>
+<span class="sd">    If worlds is not specified then add to all the worlds currently in the engine.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">world_names</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">world_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">world</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">world</span> <span class="ow">in</span> <span class="n">engine</span><span class="o">.</span><span class="n">getWorlds</span><span class="p">()]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">world_names</span><span class="p">:</span>
+        <span class="n">world</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">getWorld</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">addActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="n">button</span><span class="p">,</span> <span class="n">center_position</span><span class="o">=</span><span class="n">center_position</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="MovieRecorder"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.MovieRecorder">[docs]</a><span class="k">class</span> <span class="nc">MovieRecorder</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Will record a movie of the game&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">make_movie</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">in_memory</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the MovieRecorder</span>
+<span class="sd">        </span>
+<span class="sd">        If make_movie is True then we will convert the frames to a movie</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getRenderer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_count</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skip_frames</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipped_frames</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearFrames</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">makeFrame</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">make_movie</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_STOP</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">makeMovie</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span> <span class="o">=</span> <span class="n">in_memory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frames</span> <span class="o">=</span> <span class="p">[]</span>
+        
+<div class="viewcode-block" id="MovieRecorder.makeFrame"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.MovieRecorder.makeFrame">[docs]</a>    <span class="k">def</span> <span class="nf">makeFrame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make a frame&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skipped_frames</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">skipped_frames</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_frames</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">skipped_frames</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">getSurface</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_count</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frame_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        </div>
+<div class="viewcode-block" id="MovieRecorder.clearFrames"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.MovieRecorder.clearFrames">[docs]</a>    <span class="k">def</span> <span class="nf">clearFrames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear all current frames&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(</span><span class="n">i</span><span class="p">)):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+</div>
+<div class="viewcode-block" id="MovieRecorder.makeMovie"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.MovieRecorder.makeMovie">[docs]</a>    <span class="k">def</span> <span class="nf">makeMovie</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the frames to movie&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_memory</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dumpFiles</span><span class="p">()</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="s">&#39;cd </span><span class="si">%s</span><span class="s">; mencoder mf://</span><span class="si">%s</span><span class="s"> -mf w=</span><span class="si">%d</span><span class="s">:h=</span><span class="si">%d</span><span class="s">:fps=</span><span class="si">%d</span><span class="s">:type=png -ovc lavc -lavcopts vcodec=mpeg4:mbd=2:trell -oac copy -o </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span> 
+            <span class="s">&#39;*.png&#39;</span><span class="p">,</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> 
+            <span class="mi">60</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">skip_frames</span><span class="p">,</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearFrames</span><span class="p">()</span>
+                   </div>
+    <span class="k">def</span> <span class="nf">_getName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the filename&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-</span><span class="si">%07d</span><span class="s">.png&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">basename</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">_dumpFiles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Dump all files out from memory&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frames</span><span class="p">):</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getName</span><span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+            
+            </div>
+<div class="viewcode-block" id="RecordDesktop"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.RecordDesktop">[docs]</a><span class="k">class</span> <span class="nc">RecordDesktop</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Use record my desktop to record the action&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the RecordDesktop&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Highly system specific!</span>
+        <span class="c">#</span>
+        <span class="c"># Find our window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Looking for the main window&#39;</span><span class="p">)</span>
+        <span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s">&#39;wmctrl&#39;</span><span class="p">,</span> <span class="s">&#39;-lG&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">window</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">window</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">7</span><span class="p">:])</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">engine</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Could not find the main window!&#39;</span><span class="p">)</span>
+        <span class="c">#import pdb; pdb.set_trace()</span>
+        <span class="c">#</span>
+        <span class="c"># Now start the recording</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Starting &quot;recordmydesktop&quot;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">child</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="s">&#39;recordmydesktop&#39;</span><span class="p">,</span> <span class="s">&#39;--width&#39;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="s">&#39;--height&#39;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span>
+            <span class="s">&#39;-x&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="s">&#39;-y&#39;</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s">&#39;-o&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="s">&#39;--fps&#39;</span><span class="p">,</span> <span class="s">&#39;60&#39;</span><span class="p">])</span>
+        
+        <span class="c">#</span>
+        <span class="c"># Hook completion so we can quit</span>
+        <span class="n">engine</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_STOP</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="RecordDesktop.stop"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.RecordDesktop.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stop the recording&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Asking &quot;recordmydesktop&quot; to compile the video now&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">child</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="checkPythonVersion"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.checkPythonVersion">[docs]</a><span class="k">def</span> <span class="nf">checkPythonVersion</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Check a suitable Python version is installed&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Python 3 is not supported&#39;</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">elif</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Python 2.6+ is required&#39;</span>
+        <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="checkNetworkXVersion"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.checkNetworkXVersion">[docs]</a><span class="k">def</span> <span class="nf">checkNetworkXVersion</span><span class="p">(</span><span class="n">need_version</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check a suitable version of NetworkX is installed&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">networkx</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;networkx is required.</span><span class="se">\n</span><span class="s">Try &quot;easy_install networkx&quot; or visit http://networkx.lanl.gov/&#39;</span>
+        <span class="k">return</span> <span class="bp">False</span>
+        
+    <span class="c"># Attempt to check correct version</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">networkx</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c"># Ok, this didn&#39;t work so probably we will fail later with a more direct error!</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="n">need_version</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;</span><span class="se">\n\n</span><span class="s">networkx &gt;= version 1.5 is required. Found </span><span class="si">%s</span><span class="s">.</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">version</span>
+            <span class="k">print</span> <span class="s">&#39;Try &quot;easy_install networkx&quot; or visit http://networkx.lanl.gov/&#39;</span> 
+            <span class="k">print</span> <span class="s">&#39;You may have to remove your version using synaptic first.</span><span class="se">\n\n</span><span class="s">&#39;</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">return</span> <span class="bp">True</span>
+    
+
+</div>
+<div class="viewcode-block" id="worldCallback"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.worldCallback">[docs]</a><span class="k">def</span> <span class="nf">worldCallback</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sound</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return an event callback to switch to a certain world&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sound</span><span class="p">:</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">Sounds</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">sound</span><span class="p">)</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">setCurrentWorldByName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="k">return</span> <span class="n">callback</span>
+    </div>
+<div class="viewcode-block" id="backToPreviousWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.backToPreviousWorld">[docs]</a><span class="k">def</span> <span class="nf">backToPreviousWorld</span><span class="p">(</span><span class="n">sound</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return an event callback to switch back to the previous world&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">callback</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sound</span><span class="p">:</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">Sounds</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="n">sound</span><span class="p">)</span>
+        <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">goBackToPreviousWorld</span><span class="p">()</span>
+    <span class="c">#</span>
+    <span class="k">return</span> <span class="n">callback</span>
+</div>
+<div class="viewcode-block" id="getGamePath"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.getGamePath">[docs]</a><span class="k">def</span> <span class="nf">getGamePath</span><span class="p">(</span><span class="o">*</span><span class="n">parts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return a path based on the main game folder&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">__file__</span><span class="p">)),</span> <span class="s">&#39;..&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">parts</span><span class="p">))</span>
+    
+    </div>
+<div class="viewcode-block" id="getSimpleSetup"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.getSimpleSetup">[docs]</a><span class="k">def</span> <span class="nf">getSimpleSetup</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return an engine with a single world, zone and a few layers&quot;&quot;&quot;</span>
+    <span class="c">#</span>
+    <span class="c"># Engine</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">Engine</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="c"># World</span>
+    <span class="n">createWorldsForEngine</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;lab&#39;</span><span class="p">])</span>
+    <span class="c">#</span>
+    <span class="c"># Rendering</span>
+    <span class="n">createVirtualLayersForEngine</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;back&#39;</span><span class="p">,</span> <span class="s">&#39;middle&#39;</span><span class="p">,</span> <span class="s">&#39;front&#39;</span><span class="p">])</span>
+    <span class="c">#</span>
+    <span class="n">e</span><span class="o">.</span><span class="n">setCurrentWorldByName</span><span class="p">(</span><span class="s">&#39;lab&#39;</span><span class="p">)</span>
+    <span class="c">#</span>
+    <span class="k">return</span> <span class="n">e</span>    
+</div>
+<div class="viewcode-block" id="debugMethod"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.utils.debugMethod">[docs]</a><span class="k">def</span> <span class="nf">debugMethod</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a debug logged method&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Debugged method&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">fmt</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">fmt</span> <span class="o">%</span> <span class="n">args</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Debug </span><span class="si">%s</span><span class="s">::</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kw</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+    <span class="c">#    </span>
+    <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">log</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+    </div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

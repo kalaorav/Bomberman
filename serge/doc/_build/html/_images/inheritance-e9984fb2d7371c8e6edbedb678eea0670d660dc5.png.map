@@ -1,0 +1,6 @@
+<map id="inheritance101b7c6da4" name="inheritance101b7c6da4">
+<area shape="rect" id="node1" href="#serge.render.Renderer" title="serge.render.Renderer" alt="" coords="252,55,415,83"/>
+<area shape="rect" id="node2" href="common.html#serge.common.Loggable" title="serge.common.Loggable" alt="" coords="13,5,195,33"/>
+<area shape="rect" id="node4" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable" alt="" coords="9,55,199,83"/>
+<area shape="rect" id="node6" href="common.html#serge.common.EventAware" title="serge.common.EventAware" alt="" coords="5,106,203,134"/>
+</map>

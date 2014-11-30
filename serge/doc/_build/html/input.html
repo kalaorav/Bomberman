@@ -1,0 +1,378 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Input &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="next" title="Physical" href="physical.html" />
+    <link rel="prev" title="Sound" href="sound.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="physical.html" title="Physical"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sound.html" title="Sound"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="input">
+<h1><a class="toc-backref" href="#id1">Input</a><a class="headerlink" href="#input" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#input" id="id1">Input</a><ul>
+<li><a class="reference internal" href="#constants" id="id2">Constants</a></li>
+<li><a class="reference internal" href="#keyboard" id="id3">Keyboard</a></li>
+<li><a class="reference internal" href="#mouse" id="id4">Mouse</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<span class="target" id="module-events"></span><div class="section" id="constants">
+<h2><a class="toc-backref" href="#id2">Constants</a><a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt>
+<tt class="descname">M_LEFT - left mouse button</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descname">M_RIGHT - right mouse button</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descname">M_MIDDLE - middle mouse button</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descname">M_WHEEL_UP - scrolling the mouse wheel up</tt></dt>
+<dd></dd></dl>
+
+<dl class="data">
+<dt>
+<tt class="descname">M_WHEEL_DOWN - scrolling the mouse wheel down</tt></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="keyboard">
+<h2><a class="toc-backref" href="#id3">Keyboard</a><a class="headerlink" href="#keyboard" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="serge.input.Keyboard">
+<em class="property">class </em><tt class="descclassname">serge.input.</tt><tt class="descname">Keyboard</tt><a class="reference internal" href="_modules/serge/input.html#Keyboard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="common.html#serge.common.Loggable" title="serge.common.Loggable"><tt class="xref py py-class docutils literal"><span class="pre">serge.common.Loggable</span></tt></a></p>
+<p>Represents the state of the keyboard</p>
+<dl class="method">
+<dt id="serge.input.Keyboard.areAnyClicked">
+<tt class="descname">areAnyClicked</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.areAnyClicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.areAnyClicked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is any button clicked?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.areAnyDown">
+<tt class="descname">areAnyDown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.areAnyDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.areAnyDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Is any button depressed?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.getClicked">
+<tt class="descname">getClicked</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.getClicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.getClicked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the keys that are clicked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.getTextEntered">
+<tt class="descname">getTextEntered</tt><big>(</big><big>)</big><a class="headerlink" href="#serge.input.Keyboard.getTextEntered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return any text entered since the last call</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.isAltDown">
+<tt class="descname">isAltDown</tt><big>(</big><big>)</big><a class="headerlink" href="#serge.input.Keyboard.isAltDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the alt key is down</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.isClicked">
+<tt class="descname">isClicked</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.isClicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.isClicked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the key has been clicked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.isControlDown">
+<tt class="descname">isControlDown</tt><big>(</big><big>)</big><a class="headerlink" href="#serge.input.Keyboard.isControlDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the control key is down</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.isDown">
+<tt class="descname">isDown</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.isDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.isDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the key is down</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.isShiftDown">
+<tt class="descname">isShiftDown</tt><big>(</big><big>)</big><a class="headerlink" href="#serge.input.Keyboard.isShiftDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the shift key is down</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.isUp">
+<tt class="descname">isUp</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.isUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.isUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the key is up</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Keyboard.update">
+<tt class="descname">update</tt><big>(</big><em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Keyboard.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Keyboard.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the state of the keyboard</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="serge.input.KeyState">
+<em class="property">class </em><tt class="descclassname">serge.input.</tt><tt class="descname">KeyState</tt><a class="reference internal" href="_modules/serge/input.html#KeyState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.KeyState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Represents the state of keyboard keys</p>
+<dl class="method">
+<dt id="serge.input.KeyState.getCopy">
+<tt class="descname">getCopy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#KeyState.getCopy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.KeyState.getCopy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new copy of the key states</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.KeyState.getState">
+<tt class="descname">getState</tt><big>(</big><em>key</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#KeyState.getState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.KeyState.getState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the state of a specific key</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.KeyState.setState">
+<tt class="descname">setState</tt><big>(</big><em>key</em>, <em>state</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#KeyState.setState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.KeyState.setState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the state for a key</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mouse">
+<h2><a class="toc-backref" href="#id4">Mouse</a><a class="headerlink" href="#mouse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="serge.input.Mouse">
+<em class="property">class </em><tt class="descclassname">serge.input.</tt><tt class="descname">Mouse</tt><big>(</big><em>engine</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Represents the state of the mouse</p>
+<dl class="method">
+<dt id="serge.input.Mouse.clearClick">
+<tt class="descname">clearClick</tt><big>(</big><em>MouseStateType</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.clearClick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.clearClick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear a click event</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.getActorEvents">
+<tt class="descname">getActorEvents</tt><big>(</big><em>world</em>, <em>layers=None</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.getActorEvents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.getActorEvents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the type of events for each actor that we have hit</p>
+<p>The optional parameter layers can be a list of layers that we are interested in. Only
+actors on the given layers will be returned.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.getActorsUnderMouse">
+<tt class="descname">getActorsUnderMouse</tt><big>(</big><em>world</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.getActorsUnderMouse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.getActorsUnderMouse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the actors that the mouse is over</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.getScreenPos">
+<tt class="descname">getScreenPos</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.getScreenPos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.getScreenPos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the pixel location relative to the screen and camera</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.getStaticScreenPos">
+<tt class="descname">getStaticScreenPos</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.getStaticScreenPos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.getStaticScreenPos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the pixel location relative to the screen and NOT camera</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.isClicked">
+<tt class="descname">isClicked</tt><big>(</big><em>MouseStateType</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.isClicked"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.isClicked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the mouse button is pressed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.isDown">
+<tt class="descname">isDown</tt><big>(</big><em>MouseStateType</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.isDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.isDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the mouse button is down</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.isUp">
+<tt class="descname">isUp</tt><big>(</big><em>MouseStateType</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.isUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.isUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the mouse button is up</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.Mouse.update">
+<tt class="descname">update</tt><big>(</big><em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#Mouse.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.Mouse.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update our mouse states</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="serge.input.MouseState">
+<em class="property">class </em><tt class="descclassname">serge.input.</tt><tt class="descname">MouseState</tt><a class="reference internal" href="_modules/serge/input.html#MouseState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.MouseState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>A structure that contains the states of our mouse buttons.</p>
+<dl class="method">
+<dt id="serge.input.MouseState.getCopy">
+<tt class="descname">getCopy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/input.html#MouseState.getCopy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.MouseState.getCopy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of this state</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.MouseState.getState">
+<tt class="descname">getState</tt><big>(</big><em>StateType</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#MouseState.getState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.MouseState.getState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the specified button is pressed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.input.MouseState.setState">
+<tt class="descname">setState</tt><big>(</big><em>StateType</em>, <em>state</em><big>)</big><a class="reference internal" href="_modules/serge/input.html#MouseState.setState"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.input.MouseState.setState" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the state of a specific key</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Input</a><ul>
+<li><a class="reference internal" href="#constants">Constants</a></li>
+<li><a class="reference internal" href="#keyboard">Keyboard</a></li>
+<li><a class="reference internal" href="#mouse">Mouse</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="sound.html"
+                        title="previous chapter">Sound</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="physical.html"
+                        title="next chapter">Physical</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="physical.html" title="Physical"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="sound.html" title="Sound"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

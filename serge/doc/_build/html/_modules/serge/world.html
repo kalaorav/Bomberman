@@ -1,0 +1,427 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.world &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../index.html">
+      <img class="logo" src="../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.world</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;The main world definition&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">common</span>
+<span class="kn">import</span> <span class="nn">zone</span>
+<span class="kn">import</span> <span class="nn">serialize</span>
+<span class="kn">import</span> <span class="nn">geometry</span>
+<span class="kn">import</span> <span class="nn">events</span> 
+<span class="kn">import</span> <span class="nn">actor</span>
+
+<span class="k">class</span> <span class="nc">UnknownActor</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;Could not find the actor&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">DuplicateActor</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The actor was already in the world&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">DuplicateZone</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The zone was already in the world&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="World"><a class="viewcode-back" href="../../world.html#serge.world.World">[docs]</a><span class="k">class</span> <span class="nc">World</span><span class="p">(</span><span class="n">common</span><span class="o">.</span><span class="n">Loggable</span><span class="p">,</span> <span class="n">serialize</span><span class="o">.</span><span class="n">Serializable</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">EventAware</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The main world object</span>
+<span class="sd">    </span>
+<span class="sd">    The :doc:`engine` will control main worlds. Each world has a number</span>
+<span class="sd">    of :doc:`zone` which contain :doc:`actor`.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">my_properties</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">S</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;the name of this world&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;zones&#39;</span><span class="p">,</span> <span class="nb">set</span><span class="p">(),</span> <span class="s">&#39;the zones in this world&#39;</span><span class="p">),</span>
+        <span class="n">serialize</span><span class="o">.</span><span class="n">L</span><span class="p">(</span><span class="s">&#39;unzoned_actors&#39;</span><span class="p">,</span> <span class="nb">set</span><span class="p">(),</span> <span class="s">&#39;the actors not in any zone in this world&#39;</span><span class="p">),</span>
+    <span class="p">)</span>    
+        
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the World&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zones</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span> <span class="c"># Actors get put here if then end up in no zone</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_handlers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        
+    <span class="c">### Serializing ###</span>
+    
+<div class="viewcode-block" id="World.init"><a class="viewcode-back" href="../../world.html#serge.world.World.init">[docs]</a>    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise from serialized state&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addLogger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initEvents</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Initializing world </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">World</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c">#</span>
+        <span class="c"># This list is used to order the processing of actors in rendering. The </span>
+        <span class="c"># flag is used to tell us when we need to resort them</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_actors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actors_need_resorting</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheduled_deletions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Now process actors</span>
+        <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="n">zone</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="p">:</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+    <span class="c">### Zones ###</span>
+    </div>
+<div class="viewcode-block" id="World.addZone"><a class="viewcode-back" href="../../world.html#serge.world.World.addZone">[docs]</a>    <span class="k">def</span> <span class="nf">addZone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zone</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a zone to the world&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">zone</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DuplicateZone</span><span class="p">(</span><span class="s">&#39;The zone </span><span class="si">%s</span><span class="s"> is already in the world&#39;</span> <span class="o">%</span> <span class="n">zone</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actors_need_resorting</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="World.clearZones"><a class="viewcode-back" href="../../world.html#serge.world.World.clearZones">[docs]</a>    <span class="k">def</span> <span class="nf">clearZones</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove all the zones&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zones</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        
+    <span class="c">### Main ###</span>
+                </div>
+<div class="viewcode-block" id="World.updateWorld"><a class="viewcode-back" href="../../world.html#serge.world.World.updateWorld">[docs]</a>    <span class="k">def</span> <span class="nf">updateWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the objects in the world&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">zone</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">zone</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                <span class="n">zone</span><span class="o">.</span><span class="n">updateZone</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Process any scheduled actor deletions</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduled_deletions</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scheduled_deletions</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+            <span class="k">except</span> <span class="n">UnknownActor</span><span class="p">:</span>
+                <span class="c"># Ok, the actor must have been removed directly</span>
+                <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="World.setEngine"><a class="viewcode-back" href="../../world.html#serge.world.World.setEngine">[docs]</a>    <span class="k">def</span> <span class="nf">setEngine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the engine that we are owned by&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
+</div>
+<div class="viewcode-block" id="World.getEngine"><a class="viewcode-back" href="../../world.html#serge.world.World.getEngine">[docs]</a>    <span class="k">def</span> <span class="nf">getEngine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the engine that we are owned by&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span>
+        </div>
+<div class="viewcode-block" id="World.findActorsByTag"><a class="viewcode-back" href="../../world.html#serge.world.World.findActorsByTag">[docs]</a>    <span class="k">def</span> <span class="nf">findActorsByTag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all the actors in all zones based on the tag&quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">ActorCollection</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">findActorsByTag</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">results</span>    
+    </div>
+<div class="viewcode-block" id="World.findActorByName"><a class="viewcode-back" href="../../world.html#serge.world.World.findActorByName">[docs]</a>    <span class="k">def</span> <span class="nf">findActorByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the actor with the give name in all zones&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">z</span><span class="o">.</span><span class="n">findActorByName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">zone</span><span class="o">.</span><span class="n">ActorNotFound</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">zone</span><span class="o">.</span><span class="n">ActorNotFound</span><span class="p">(</span><span class="s">&#39;Unable to find actor named &quot;</span><span class="si">%s</span><span class="s">&quot; in any zone&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="World.findActorsAt"><a class="viewcode-back" href="../../world.html#serge.world.World.findActorsAt">[docs]</a>    <span class="k">def</span> <span class="nf">findActorsAt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the actors at a certain location&quot;&quot;&quot;</span>
+        <span class="n">actors</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">ActorCollection</span><span class="p">()</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">the_actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getActors</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">isInside</span><span class="p">(</span><span class="n">the_actor</span><span class="p">):</span>
+                <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">the_actor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">actors</span>
+        </div>
+<div class="viewcode-block" id="World.getActors"><a class="viewcode-back" href="../../world.html#serge.world.World.getActors">[docs]</a>    <span class="k">def</span> <span class="nf">getActors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all the actors&quot;&quot;&quot;</span>
+        <span class="n">actors</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">ActorCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="n">actors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">getActors</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">actors</span>
+      </div>
+<div class="viewcode-block" id="World.rezoneActors"><a class="viewcode-back" href="../../world.html#serge.world.World.rezoneActors">[docs]</a>    <span class="k">def</span> <span class="nf">rezoneActors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Move actors to the right zone based on their spatial location&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Start with a list of actors to find homes for based on any that</span>
+        <span class="c"># were not in any zones at all</span>
+        <span class="n">moved</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="c"># Find all the actors that are no longer in the right zone</span>
+        <span class="c"># and remove them from their current zone</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="n">z</span><span class="o">.</span><span class="n">actors</span><span class="o">.</span><span class="n">copy</span><span class="p">():</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">actor</span><span class="o">.</span><span class="n">isOverlapping</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+                    <span class="n">z</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+                    <span class="n">moved</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Now find the place for the moved actors</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="n">moved</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="World.clearActors"><a class="viewcode-back" href="../../world.html#serge.world.World.clearActors">[docs]</a>    <span class="k">def</span> <span class="nf">clearActors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear all the actors&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearActorsExceptTags</span><span class="p">([])</span>
+</div>
+<div class="viewcode-block" id="World.clearActorsExceptTags"><a class="viewcode-back" href="../../world.html#serge.world.World.clearActorsExceptTags">[docs]</a>    <span class="k">def</span> <span class="nf">clearActorsExceptTags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear all actors except the ones with a tag in the list of tags&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getActors</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">UnknownActor</span><span class="p">:</span>
+                    <span class="c"># Can be called if a composite actor removes their own children</span>
+                    <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="World.clearActorsWithTags"><a class="viewcode-back" href="../../world.html#serge.world.World.clearActorsWithTags">[docs]</a>    <span class="k">def</span> <span class="nf">clearActorsWithTags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clear all actors with a tag in the list of tags&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getActors</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">UnknownActor</span><span class="p">:</span>
+                    <span class="c"># Can be called if a composite actor removes their own children</span>
+                    <span class="k">pass</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+       
+        </div>
+<div class="viewcode-block" id="World.addActor"><a class="viewcode-back" href="../../world.html#serge.world.World.addActor">[docs]</a>    <span class="k">def</span> <span class="nf">addActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add an actor to the world&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Adding </span><span class="si">%s</span><span class="s"> to world </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Make sure the actor isn&#39;t already here</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasActor</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">DuplicateActor</span><span class="p">(</span><span class="s">&#39;The actor </span><span class="si">%s</span><span class="s"> is already in the world&#39;</span> <span class="o">%</span> <span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">())</span>
+        <span class="c">#</span>
+        <span class="c"># Try to put the actor in the right zone</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">z</span><span class="o">.</span><span class="n">wouldContain</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+                <span class="n">z</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># The actor is not in any zones, store for later</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Tell the actor about it</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actors_need_resorting</span> <span class="o">=</span> <span class="bp">True</span>
+        </div>
+<div class="viewcode-block" id="World.removeActor"><a class="viewcode-back" href="../../world.html#serge.world.World.removeActor">[docs]</a>    <span class="k">def</span> <span class="nf">removeActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the actor from the world&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Removing &quot;</span><span class="si">%s</span><span class="s">&quot; actor (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">actor</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="c">#</span>
+        <span class="c"># Tell the actor about it</span>
+        <span class="n">actor</span><span class="o">.</span><span class="n">removedFromWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_actors_need_resorting</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c">#</span>
+        <span class="c"># Try to remove from zones</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">z</span><span class="o">.</span><span class="n">hasActor</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+                <span class="n">z</span><span class="o">.</span><span class="n">removeActor</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="c">#</span>
+        <span class="c"># We didn&#39;t find it in the zone - maybe in the unzoned</span>
+        <span class="k">if</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnknownActor</span><span class="p">(</span><span class="s">&#39;The actor </span><span class="si">%s</span><span class="s"> was not found in the world&#39;</span> <span class="o">%</span> <span class="n">actor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="World.scheduleActorRemoval"><a class="viewcode-back" href="../../world.html#serge.world.World.scheduleActorRemoval">[docs]</a>    <span class="k">def</span> <span class="nf">scheduleActorRemoval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove an actor at the end of the next update for the world</span>
+<span class="sd">        </span>
+<span class="sd">        This method can be used to safely remove an actor from the world</span>
+<span class="sd">        during the execution of the world update. It can sometimes be</span>
+<span class="sd">        useful to do this when inside logic that is iterating over actors</span>
+<span class="sd">        or inside the updateWorld event loop.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scheduled_deletions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="World.hasActor"><a class="viewcode-back" href="../../world.html#serge.world.World.hasActor">[docs]</a>    <span class="k">def</span> <span class="nf">hasActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return True if this actor is in the world&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Try to remove from zones</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">z</span><span class="o">.</span><span class="n">hasActor</span><span class="p">(</span><span class="n">actor</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="c">#</span>
+        <span class="c"># We didn&#39;t find it in the zone - maybe in the unzoned</span>
+        <span class="k">return</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unzoned_actors</span>
+</div>
+<div class="viewcode-block" id="World.renderTo"><a class="viewcode-back" href="../../world.html#serge.world.World.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render all of our actors in active zones&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Watch out in case we need to reorder our actors</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_actors_need_resorting</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Sorting actors now&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_actors</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">orderActors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getActors</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_actors_need_resorting</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="c">#</span>
+        <span class="n">camera</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">getCamera</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_BEFORE_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Render all of the actors</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sorted_actors</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="n">actor</span><span class="o">.</span><span class="n">visible</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">actor</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">renderer</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Failed rendering &quot;</span><span class="si">%s</span><span class="s">&quot; actor &quot;</span><span class="si">%s</span><span class="s">&quot;: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">actor</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+                    <span class="k">raise</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_AFTER_RENDER</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="World.setZoom"><a class="viewcode-back" href="../../world.html#serge.world.World.setZoom">[docs]</a>    <span class="k">def</span> <span class="nf">setZoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the visual zoom on this world to zoom centered on x, y&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">actor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getActors</span><span class="p">():</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">setZoom</span><span class="p">(</span><span class="n">zoom</span><span class="p">)</span> 
+            
+    <span class="c">### Events ###</span>
+    </div>
+<div class="viewcode-block" id="World.processEvents"><a class="viewcode-back" href="../../world.html#serge.world.World.processEvents">[docs]</a>    <span class="k">def</span> <span class="nf">processEvents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle the events&quot;&quot;&quot;</span>
+        <span class="n">inhibited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">obj</span><span class="p">),</span> <span class="n">actor</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">actor</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">inhibited</span><span class="p">:</span>
+                <span class="c"># Process the event</span>
+                <span class="n">new_inhibits</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">event</span><span class="p">,</span> <span class="n">obj</span><span class="p">))</span>
+                <span class="c"># Record if we need to inhibit further events of a certain type</span>
+                <span class="k">if</span> <span class="n">new_inhibits</span><span class="p">:</span>
+                    <span class="n">inhibited</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_inhibits</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="World.activateWorld"><a class="viewcode-back" href="../../world.html#serge.world.World.activateWorld">[docs]</a>    <span class="k">def</span> <span class="nf">activateWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when the world is set as the current world&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_ACTIVATE_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+                </div>
+<div class="viewcode-block" id="World.deactivateWorld"><a class="viewcode-back" href="../../world.html#serge.world.World.deactivateWorld">[docs]</a>    <span class="k">def</span> <span class="nf">deactivateWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Called when the world is deactivated&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">events</span><span class="o">.</span><span class="n">E_DEACTIVATE_WORLD</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+        
+    <span class="c">### Physics ###</span>
+    </div>
+<div class="viewcode-block" id="World.setPhysicsStepsize"><a class="viewcode-back" href="../../world.html#serge.world.World.setPhysicsStepsize">[docs]</a>    <span class="k">def</span> <span class="nf">setPhysicsStepsize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the maximum step size for physics calculations&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="n">z</span><span class="o">.</span><span class="n">setPhysicsStepsize</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="World.setGlobalForce"><a class="viewcode-back" href="../../world.html#serge.world.World.setGlobalForce">[docs]</a>    <span class="k">def</span> <span class="nf">setGlobalForce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the global force for physics&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zones</span><span class="p">:</span>
+            <span class="n">z</span><span class="o">.</span><span class="n">setGlobalForce</span><span class="p">(</span><span class="n">force</span><span class="p">)</span>
+        </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

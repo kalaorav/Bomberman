@@ -1,0 +1,257 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Zones &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="up" title="Worlds" href="world.html" />
+    <link rel="next" title="Actors" href="actor.html" />
+    <link rel="prev" title="Worlds" href="world.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="actor.html" title="Actors"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="world.html" title="Worlds"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="world.html" accesskey="U">Worlds</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-zone">
+<span id="zones"></span><h1>Zones<a class="headerlink" href="#module-zone" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="serge.zone.Zone">
+<em class="property">class </em><tt class="descclassname">serge.zone.</tt><tt class="descname">Zone</tt><a class="reference internal" href="_modules/serge/zone.html#Zone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="geometry.html#serge.geometry.Rectangle" title="serge.geometry.Rectangle"><tt class="xref py py-class docutils literal"><span class="pre">serge.geometry.Rectangle</span></tt></a>, <a class="reference internal" href="common.html#serge.common.Loggable" title="serge.common.Loggable"><tt class="xref py py-class docutils literal"><span class="pre">serge.common.Loggable</span></tt></a></p>
+<p>A zone</p>
+<p>A zone is part of a world. It is a container for objects
+and it controls whether objects will take part in world 
+updates.</p>
+<dl class="method">
+<dt id="serge.zone.Zone.addActor">
+<tt class="descname">addActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.addActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.addActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an actor to the zone</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.clearActors">
+<tt class="descname">clearActors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.clearActors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.clearActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all actors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.findActorByName">
+<tt class="descname">findActorByName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.findActorByName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.findActorByName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the actor with the given name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.findActorsByTag">
+<tt class="descname">findActorsByTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.findActorsByTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.findActorsByTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the actors with a certain tag</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.findFirstActorByTag">
+<tt class="descname">findFirstActorByTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.findFirstActorByTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.findFirstActorByTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the first actor found with the given tag or raise an error</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.getActors">
+<tt class="descname">getActors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.getActors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.getActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the actors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.hasActor">
+<tt class="descname">hasActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.hasActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.hasActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the actor is in this zone</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.init">
+<tt class="descname">init</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise from serialized state</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.removeActor">
+<tt class="descname">removeActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.removeActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.removeActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an actor from the zone</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.setGlobalForce">
+<tt class="descname">setGlobalForce</tt><big>(</big><em>force</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.setGlobalForce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.setGlobalForce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the global force for physics</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.setPhysicsStepsize">
+<tt class="descname">setPhysicsStepsize</tt><big>(</big><em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.setPhysicsStepsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.setPhysicsStepsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the maximum step size for physics calculations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.sleepActor">
+<tt class="descname">sleepActor</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#serge.zone.Zone.sleepActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tell the actor to go to sleep from a physics perspective</p>
+<p>The actor will still be visible and will still be updated but it
+will not update its physics. Useful for optimising when an actor
+does not need to interact with the physics simulation for a while.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.updatePhysics">
+<tt class="descname">updatePhysics</tt><big>(</big><em>interval</em><big>)</big><a class="headerlink" href="#serge.zone.Zone.updatePhysics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a step of the physics engine</p>
+<p>You do not normally need to call this method as it is called by the
+updateZone method. You may call this to advance the physics simulation
+along without affecting other game elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.updateZone">
+<tt class="descname">updateZone</tt><big>(</big><em>interval</em>, <em>world</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.updateZone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.updateZone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the objects in the zone</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.wakeActor">
+<tt class="descname">wakeActor</tt><big>(</big><em>actor</em><big>)</big><a class="headerlink" href="#serge.zone.Zone.wakeActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tell the actor to go to wake up from a physics perspective</p>
+<p>An actor that was put to sleep (via sleepActor) will be woken
+up and take part in the physics simulation again.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.zone.Zone.wouldContain">
+<tt class="descname">wouldContain</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/zone.html#Zone.wouldContain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.zone.Zone.wouldContain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this zone would contain the actor as it is right now</p>
+<p>The base Zone implementation uses spatial overlapping as the criteria but you
+can create custom zones that use other criteria to decide which actors should
+be in the zone.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="world.html"
+                        title="previous chapter">Worlds</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="actor.html"
+                        title="next chapter">Actors</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="actor.html" title="Actors"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="world.html" title="Worlds"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="world.html" >Worlds</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

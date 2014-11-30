@@ -1,0 +1,171 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Useful Building Blocks &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="next" title="Building Blocks" href="blocks.html" />
+    <link rel="prev" title="Tutorial 2: Snake Part 2" href="tutorial-2.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="blocks.html" title="Building Blocks"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial-2.html" title="Tutorial 2: Snake Part 2"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="useful-building-blocks">
+<h1>Useful Building Blocks<a class="headerlink" href="#useful-building-blocks" title="Permalink to this headline">¶</a></h1>
+<p>The serge engine is quite small and provides the core classes needed to construct a game. When building a game it is useful to also build upon some higher level pieces such as custom actor types, UI layouts and certain behaviours like responding to user input. This functionality is collected in the various <em>blocks</em> modules.</p>
+<p class="graphviz">
+<img src="_images/graphviz-e105d178f146796d84ac12b606890fb9e5d18932.png" alt="digraph foo {
+    pygame -&gt; serge;
+    serge -&gt; blocks;
+    blocks -&gt; game;
+    serge -&gt; game;
+    pygame -&gt; game;
+}" />
+</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="blocks.html">Building Blocks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.achievements"><tt class="docutils literal"><span class="pre">achievements</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.actors"><tt class="docutils literal"><span class="pre">actors</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.behaviours"><tt class="docutils literal"><span class="pre">behaviours</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.conversation"><tt class="docutils literal"><span class="pre">conversation</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.directions"><tt class="docutils literal"><span class="pre">directions</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.dragndrop"><tt class="docutils literal"><span class="pre">dragndrop</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.effects"><tt class="docutils literal"><span class="pre">effects</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.fractals"><tt class="docutils literal"><span class="pre">fractals</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.layout"><tt class="docutils literal"><span class="pre">layout</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.scores"><tt class="docutils literal"><span class="pre">scores</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.singletons"><tt class="docutils literal"><span class="pre">singletons</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.themes"><tt class="docutils literal"><span class="pre">themes</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.tiled"><tt class="docutils literal"><span class="pre">tiled</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.utils"><tt class="docutils literal"><span class="pre">utils</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.visualblocks"><tt class="docutils literal"><span class="pre">visualblocks</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.visualeffects"><tt class="docutils literal"><span class="pre">visualeffects</span></tt> Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blocks.html#module-serge.blocks.worker"><tt class="docutils literal"><span class="pre">worker</span></tt> Module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial-2.html"
+                        title="previous chapter">Tutorial 2: Snake Part 2</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="blocks.html"
+                        title="next chapter">Building Blocks</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="blocks.html" title="Building Blocks"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial-2.html" title="Tutorial 2: Snake Part 2"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

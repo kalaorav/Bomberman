@@ -1,0 +1,402 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.visualblocks &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.visualblocks</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Useful blocks for visual rendering&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+
+<span class="kn">import</span> <span class="nn">serge.visual</span>
+
+<div class="viewcode-block" id="InvalidSprite"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.InvalidSprite">[docs]</a><span class="k">class</span> <span class="nc">InvalidSprite</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The selected sprite was not valid&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="InvalidParameters"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.InvalidParameters">[docs]</a><span class="k">class</span> <span class="nc">InvalidParameters</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The parameters for the shape were not valid&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="OutOfRange"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.OutOfRange">[docs]</a><span class="k">class</span> <span class="nc">OutOfRange</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The value was outside the valid range&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="OverlappingRanges"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.OverlappingRanges">[docs]</a><span class="k">class</span> <span class="nc">OverlappingRanges</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The ranges for the progress bar were overlapping&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="RangesNotContiguous"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.RangesNotContiguous">[docs]</a><span class="k">class</span> <span class="nc">RangesNotContiguous</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The ranges for the progress bar had gaps in them&quot;&quot;&quot;</span>
+
+<span class="c">### Simple shapes ###</span>
+
+</div>
+<div class="viewcode-block" id="Rectangle"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Rectangle">[docs]</a><span class="k">class</span> <span class="nc">Rectangle</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">SurfaceDrawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A rectangle&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="n">colour</span><span class="p">,</span> <span class="n">stroke_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the rectangle&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Rectangle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_colour</span> <span class="o">=</span> <span class="n">stroke_colour</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span> <span class="o">=</span> <span class="n">stroke_width</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">stroke_width</span> <span class="ow">and</span> <span class="n">stroke_colour</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">stroke_width</span> <span class="o">&gt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">stroke_width</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidParameters</span><span class="p">(</span><span class="s">&#39;Stroking width must be &gt; 0 and less than half the smallest side (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stroke_width</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">_updateSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clearSurface</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_colour</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># If we are stroking then draw a full size rectange with the stroke colour and</span>
+            <span class="c"># then a smaller one with the actual fill colour</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_colour</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">))</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">,</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">colour</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span>
+    <span class="nd">@colour.setter</span>
+<div class="viewcode-block" id="Rectangle.colour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Rectangle.colour">[docs]</a>    <span class="k">def</span> <span class="nf">colour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+        
+                </div></div>
+<div class="viewcode-block" id="Circle"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Circle">[docs]</a><span class="k">class</span> <span class="nc">Circle</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">SurfaceDrawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A circle&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">stroke_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the circle&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Circle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">radius</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">radius</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_colour</span> <span class="o">=</span> <span class="n">stroke_colour</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span> <span class="o">=</span> <span class="n">stroke_width</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">stroke_width</span> <span class="ow">and</span> <span class="n">stroke_colour</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">stroke_width</span> <span class="o">&gt;</span> <span class="n">radius</span> <span class="ow">or</span> <span class="n">stroke_width</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidParameters</span><span class="p">(</span><span class="s">&#39;Stroking width must be &gt; 0 and less than the radius (</span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">stroke_width</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+                
+    <span class="k">def</span> <span class="nf">_updateSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span><span class="o">*</span><span class="mi">2</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clearSurface</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_colour</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># If we are stroking then draw a full size circle with the stroke colour and</span>
+            <span class="c"># then a smaller one with the actual fill colour</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_colour</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">)</span>
+           
+<div class="viewcode-block" id="Circle.setAngle"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Circle.setAngle">[docs]</a>    <span class="k">def</span> <span class="nf">setAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the angle</span>
+<span class="sd">        </span>
+<span class="sd">        Pass through as this is a circle!&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="k">def</span> <span class="nf">_updateDimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the dimensions of the drawing&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface</span><span class="o">.</span><span class="n">get_height</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">colour</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span>
+    <span class="nd">@colour.setter</span>
+<div class="viewcode-block" id="Circle.colour"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Circle.colour">[docs]</a>    <span class="k">def</span> <span class="nf">colour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">radius</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span>
+    <span class="nd">@radius.setter</span>
+<div class="viewcode-block" id="Circle.radius"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Circle.radius">[docs]</a>    <span class="k">def</span> <span class="nf">radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_radius</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+    
+        
+<span class="c">### Shapes with text ###</span>
+</div></div>
+<div class="viewcode-block" id="RectangleText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.RectangleText">[docs]</a><span class="k">class</span> <span class="nc">RectangleText</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Drawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A rectangle with some text on it&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">text_colour</span><span class="p">,</span> <span class="n">rect_dimensions</span><span class="p">,</span> <span class="n">rect_colour</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">stroke_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the drawing&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">text_colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">justify</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect_visual</span> <span class="o">=</span> <span class="n">Rectangle</span><span class="p">(</span><span class="n">rect_dimensions</span><span class="p">,</span> <span class="n">rect_colour</span><span class="p">,</span> <span class="n">stroke_width</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect_visual</span><span class="o">.</span><span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect_visual</span><span class="o">.</span><span class="n">height</span>
+        
+<div class="viewcode-block" id="RectangleText.renderTo"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.RectangleText.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect_visual</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect_visual</span><span class="o">.</span><span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">w</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+        </div></div>
+<div class="viewcode-block" id="CircleText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.CircleText">[docs]</a><span class="k">class</span> <span class="nc">CircleText</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Drawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A circle with some text on it&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">text_colour</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">circle_colour</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">stroke_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the drawing&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">text_colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">justify</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circle_visual</span> <span class="o">=</span> <span class="n">Circle</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">circle_colour</span><span class="p">,</span> <span class="n">stroke_width</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="CircleText.renderTo"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.CircleText.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circle_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> 
+            <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_visual</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> 
+             <span class="n">y</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_visual</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="CircleText.getSize"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.CircleText.getSize">[docs]</a>    <span class="k">def</span> <span class="nf">getSize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the size of the drawing&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">]</span>
+        
+<span class="c">### Sprite with text ###</span>
+</div></div>
+<div class="viewcode-block" id="SpriteText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.SpriteText">[docs]</a><span class="k">class</span> <span class="nc">SpriteText</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Sprite</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A sprite with some text on it&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">text_colour</span><span class="p">,</span> <span class="n">sprite_name</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">stroke_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stroke_colour</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the drawing&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SpriteText</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">text_colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">justify</span><span class="p">)</span>
+        <span class="n">sprite</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Register</span><span class="o">.</span><span class="n">getItem</span><span class="p">(</span><span class="n">sprite_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setImage</span><span class="p">(</span><span class="n">sprite</span><span class="o">.</span><span class="n">raw_image</span><span class="p">,</span> <span class="p">(</span><span class="n">sprite</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">sprite</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="n">sprite</span><span class="o">.</span><span class="n">framerate</span><span class="p">,</span> <span class="n">sprite</span><span class="o">.</span><span class="n">running</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="SpriteText.renderTo"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.SpriteText.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Render to a surface&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SpriteText</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">milliseconds</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> 
+                <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> 
+                 <span class="n">y</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="SpriteText.setText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.SpriteText.setText">[docs]</a>    <span class="k">def</span> <span class="nf">setText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the text&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="SpriteText.text"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.SpriteText.text">[docs]</a>    <span class="k">def</span> <span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">text_visual</span><span class="o">.</span><span class="n">text</span>
+</div></div>
+<div class="viewcode-block" id="TextToggle"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.TextToggle">[docs]</a><span class="k">class</span> <span class="nc">TextToggle</span><span class="p">(</span><span class="n">SpriteText</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A sprite text item that has multiple cells and can be used as a toggle</span>
+<span class="sd">    </span>
+<span class="sd">    You can set the cells directly of use On=0 and Off=1.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the  TextToggle&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextToggle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Reality check - the underlying sprite must have at least two cells</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidSprite</span><span class="p">(</span><span class="s">&#39;The selected sprite does not have enough cells. Needs at least two&#39;</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="TextToggle.setOn"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.TextToggle.setOn">[docs]</a>    <span class="k">def</span> <span class="nf">setOn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set to on&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TextToggle.setOff"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.TextToggle.setOff">[docs]</a>    <span class="k">def</span> <span class="nf">setOff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set to off&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="TextToggle.toggle"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.TextToggle.toggle">[docs]</a>    <span class="k">def</span> <span class="nf">toggle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Toggle the state&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOff</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOn</span><span class="p">()</span>
+    </div>
+<div class="viewcode-block" id="TextToggle.isOn"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.TextToggle.isOn">[docs]</a>    <span class="k">def</span> <span class="nf">isOn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return if we are on&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span> <span class="o">==</span> <span class="mi">0</span>
+    </div>
+<div class="viewcode-block" id="TextToggle.isOff"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.TextToggle.isOff">[docs]</a>    <span class="k">def</span> <span class="nf">isOff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return if we are on&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_cell</span> <span class="o">!=</span> <span class="mi">0</span>
+    
+    </div></div>
+<div class="viewcode-block" id="Toggle"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.Toggle">[docs]</a><span class="k">class</span> <span class="nc">Toggle</span><span class="p">(</span><span class="n">TextToggle</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Like a text toggle but with no text&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sprite_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the toggle&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Toggle</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">sprite_name</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="ProgressBar"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.ProgressBar">[docs]</a><span class="k">class</span> <span class="nc">ProgressBar</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">SurfaceDrawing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A progress bar</span>
+<span class="sd">    </span>
+<span class="sd">    The progress bar shows a rectangle on the screen which you can</span>
+<span class="sd">    use to show progress or represent the number of cetain items.</span>
+<span class="sd">    The bar can be a single colour or can change colour within</span>
+<span class="sd">    certain ranges.</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">value_ranges</span><span class="p">,</span> <span class="n">border_width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">border_colour</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the ProgressBar&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ProgressBar</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_checkRanges</span><span class="p">(</span><span class="n">value_ranges</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">border_width</span> <span class="o">=</span> <span class="n">border_width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">border_colour</span> <span class="o">=</span> <span class="n">border_colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+        
+    <span class="k">def</span> <span class="nf">_checkRanges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_ranges</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check that the ranges make sense&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_ranges</span> <span class="o">=</span> <span class="n">value_ranges</span>
+        <span class="n">last_low</span> <span class="o">=</span> <span class="n">last_high</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">colour</span> <span class="ow">in</span> <span class="n">value_ranges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">last_low</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">low</span> <span class="o">&lt;</span> <span class="n">last_high</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">OverlappingRanges</span><span class="p">(</span><span class="s">&#39;The ranges overlap (</span><span class="si">%d</span><span class="s">, </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">last_high</span><span class="p">,</span> <span class="n">low</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">low</span> <span class="o">&gt;</span> <span class="n">last_high</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">RangesNotContiguous</span><span class="p">(</span><span class="s">&#39;The ranges have gaps (</span><span class="si">%d</span><span class="s">, </span><span class="si">%d</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">last_high</span><span class="p">,</span> <span class="n">low</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">low</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_min</span> <span class="o">=</span> <span class="n">low</span>
+            <span class="n">last_low</span><span class="p">,</span> <span class="n">last_high</span> <span class="o">=</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">=</span> <span class="n">high</span>
+        
+        
+    <span class="c">#</span>
+    <span class="c"># The value property, which is used to determine the progress ammount</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span>
+    <span class="nd">@value.setter</span>
+    <span class="c">#</span>
+<div class="viewcode-block" id="ProgressBar.value"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.visualblocks.ProgressBar.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">for</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">colour</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_ranges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">low</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">high</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Watch out for special case of x = maximum</span>
+            <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">high</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span> <span class="o">=</span> <span class="n">colour</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">OutOfRange</span><span class="p">(</span><span class="s">&#39;The value </span><span class="si">%s</span><span class="s"> was not in the range of the progress bar&#39;</span> <span class="o">%</span> <span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateSurface</span><span class="p">()</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_updateSurface</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update our surface&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clearSurface</span><span class="p">()</span>
+        <span class="n">width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_max</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">_min</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span>
+        <span class="k">if</span> <span class="n">width</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_colour</span><span class="p">,</span> 
+                <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">stroke_width</span><span class="p">)</span>         
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_width</span><span class="p">:</span>   
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">border_colour</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">),</span>
+                 <span class="bp">self</span><span class="o">.</span><span class="n">border_width</span><span class="p">)</span>         
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

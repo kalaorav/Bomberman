@@ -1,0 +1,342 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Worlds &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="index.html" />
+    <link rel="next" title="Zones" href="zone.html" />
+    <link rel="prev" title="Engine" href="engine.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="index.html">
+      <img class="logo" src="_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="zone.html" title="Zones"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="engine.html" title="Engine"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="worlds">
+<h1>Worlds<a class="headerlink" href="#worlds" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="zone.html">Zones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="actor.html">Actors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="actor.html#actor">Actor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="actor.html#compositeactor">CompositeActor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="actor.html#mountableactor">MountableActor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="actor.html#physicallymountableactor">PhysicallyMountableActor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="actor.html#actorcollection">ActorCollection</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<span class="target" id="module-world"></span><div class="section" id="world">
+<h2>World<a class="headerlink" href="#world" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="serge.world.World">
+<em class="property">class </em><tt class="descclassname">serge.world.</tt><tt class="descname">World</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="common.html#serge.common.Loggable" title="serge.common.Loggable"><tt class="xref py py-class docutils literal"><span class="pre">serge.common.Loggable</span></tt></a>, <a class="reference internal" href="common.html#serge.serialize.Serializable" title="serge.serialize.Serializable"><tt class="xref py py-class docutils literal"><span class="pre">serge.serialize.Serializable</span></tt></a>, <a class="reference internal" href="common.html#serge.common.EventAware" title="serge.common.EventAware"><tt class="xref py py-class docutils literal"><span class="pre">serge.common.EventAware</span></tt></a></p>
+<p>The main world object</p>
+<p>The <a class="reference internal" href="engine.html"><em>Engine</em></a> will control main worlds. Each world has a number
+of <a class="reference internal" href="zone.html"><em>Zones</em></a> which contain <a class="reference internal" href="actor.html"><em>Actors</em></a>.</p>
+<dl class="method">
+<dt id="serge.world.World.activateWorld">
+<tt class="descname">activateWorld</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.activateWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.activateWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the world is set as the current world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.addActor">
+<tt class="descname">addActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.addActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.addActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an actor to the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.addZone">
+<tt class="descname">addZone</tt><big>(</big><em>zone</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.addZone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.addZone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a zone to the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.clearActors">
+<tt class="descname">clearActors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.clearActors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.clearActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear all the actors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.clearActorsExceptTags">
+<tt class="descname">clearActorsExceptTags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.clearActorsExceptTags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.clearActorsExceptTags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear all actors except the ones with a tag in the list of tags</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.clearActorsWithTags">
+<tt class="descname">clearActorsWithTags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.clearActorsWithTags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.clearActorsWithTags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear all actors with a tag in the list of tags</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.clearZones">
+<tt class="descname">clearZones</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.clearZones"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.clearZones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all the zones</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.deactivateWorld">
+<tt class="descname">deactivateWorld</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.deactivateWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.deactivateWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the world is deactivated</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.findActorByName">
+<tt class="descname">findActorByName</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.findActorByName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.findActorByName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the actor with the give name in all zones</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.findActorsAt">
+<tt class="descname">findActorsAt</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.findActorsAt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.findActorsAt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the actors at a certain location</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.findActorsByTag">
+<tt class="descname">findActorsByTag</tt><big>(</big><em>tag</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.findActorsByTag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.findActorsByTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the actors in all zones based on the tag</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.getActors">
+<tt class="descname">getActors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.getActors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.getActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all the actors</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.getEngine">
+<tt class="descname">getEngine</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.getEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.getEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the engine that we are owned by</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.hasActor">
+<tt class="descname">hasActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.hasActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.hasActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if this actor is in the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.init">
+<tt class="descname">init</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.init"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise from serialized state</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.processEvents">
+<tt class="descname">processEvents</tt><big>(</big><em>events</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.processEvents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.processEvents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle the events</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.removeActor">
+<tt class="descname">removeActor</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.removeActor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.removeActor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the actor from the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.renderTo">
+<tt class="descname">renderTo</tt><big>(</big><em>renderer</em>, <em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.renderTo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.renderTo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render all of our actors in active zones</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.rezoneActors">
+<tt class="descname">rezoneActors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.rezoneActors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.rezoneActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move actors to the right zone based on their spatial location</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.scheduleActorRemoval">
+<tt class="descname">scheduleActorRemoval</tt><big>(</big><em>actor</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.scheduleActorRemoval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.scheduleActorRemoval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove an actor at the end of the next update for the world</p>
+<p>This method can be used to safely remove an actor from the world
+during the execution of the world update. It can sometimes be
+useful to do this when inside logic that is iterating over actors
+or inside the updateWorld event loop.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.setEngine">
+<tt class="descname">setEngine</tt><big>(</big><em>engine</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.setEngine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.setEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the engine that we are owned by</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.setGlobalForce">
+<tt class="descname">setGlobalForce</tt><big>(</big><em>force</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.setGlobalForce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.setGlobalForce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the global force for physics</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.setPhysicsStepsize">
+<tt class="descname">setPhysicsStepsize</tt><big>(</big><em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.setPhysicsStepsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.setPhysicsStepsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the maximum step size for physics calculations</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.setZoom">
+<tt class="descname">setZoom</tt><big>(</big><em>zoom</em>, <em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.setZoom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.setZoom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the visual zoom on this world to zoom centered on x, y</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.sleepPhysicsForActors">
+<tt class="descname">sleepPhysicsForActors</tt><big>(</big><em>actors</em><big>)</big><a class="headerlink" href="#serge.world.World.sleepPhysicsForActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tell the actors to go to sleep from a physics perspective</p>
+<p>The actors will still be visible and will still be updated but they
+will not update their physics. Useful for optimising when an actor
+does not need to interact with the physics simulation for a while.</p>
+<p>If an actor is unzoned then this will have no impact on them</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.updateWorld">
+<tt class="descname">updateWorld</tt><big>(</big><em>interval</em><big>)</big><a class="reference internal" href="_modules/serge/world.html#World.updateWorld"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#serge.world.World.updateWorld" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the objects in the world</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="serge.world.World.wakePhysicsForActors">
+<tt class="descname">wakePhysicsForActors</tt><big>(</big><em>actors</em><big>)</big><a class="headerlink" href="#serge.world.World.wakePhysicsForActors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tell the actors to go to wake up from a physics perspective</p>
+<p>Actors that were put to sleep (via sleepPhysicsForActors) will be woken
+up and take part in the physics simulation again.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Worlds</a><ul>
+<li><a class="reference internal" href="#world">World</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="engine.html"
+                        title="previous chapter">Engine</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="zone.html"
+                        title="next chapter">Zones</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="zone.html" title="Zones"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="engine.html" title="Engine"
+             >previous</a> |</li>
+        <li><a href="index.html">serge 0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,538 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-23654340-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>serge.blocks.actors &mdash; serge 0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/pp.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="serge 0.4 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head>
+  <body>
+<div class="header">
+  <div class="logo">
+    <a href="../../../index.html">
+      <img class="logo" src="../../../_static/pyramid_text.png" alt="Logo"/>
+    </a>
+  </div>
+</div>
+
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for serge.blocks.actors</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Blocks to help with actors&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pygame</span>
+
+<span class="kn">import</span> <span class="nn">serge.actor</span>
+<span class="kn">import</span> <span class="nn">serge.engine</span>
+<span class="kn">import</span> <span class="nn">serge.actor</span>
+<span class="kn">import</span> <span class="nn">serge.events</span>
+<span class="kn">import</span> <span class="nn">serge.blocks.behaviours</span>
+
+<div class="viewcode-block" id="InvalidMenu"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.InvalidMenu">[docs]</a><span class="k">class</span> <span class="nc">InvalidMenu</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The menu was not valid&quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="InvalidMenuItem"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.InvalidMenuItem">[docs]</a><span class="k">class</span> <span class="nc">InvalidMenuItem</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span> <span class="s">&quot;&quot;&quot;The menu item was not understood&quot;&quot;&quot;</span>
+
+
+</div>
+<div class="viewcode-block" id="ScreenActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ScreenActor">[docs]</a><span class="k">class</span> <span class="nc">ScreenActor</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">CompositeActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An actor to represent the logic associated with a screen of the game</span>
+<span class="sd">    </span>
+<span class="sd">    This actor is useful when encapsulating the logic associated with a specific</span>
+<span class="sd">    screen in the game. The actor has useful properties and methods that</span>
+<span class="sd">    make it easy to manage the logic.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the ScreenActor&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ScreenActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="ScreenActor.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ScreenActor.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The actor was added to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ScreenActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">world</span> <span class="o">=</span> <span class="n">world</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keyboard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getKeyboard</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mouse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getMouse</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">getCamera</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">broadcaster</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">getEventBroadcaster</span><span class="p">()</span>
+        
+</div></div>
+<div class="viewcode-block" id="RepeatedVisualActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor">[docs]</a><span class="k">class</span> <span class="nc">RepeatedVisualActor</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An actor that shows multiple copies of a visual representation</span>
+<span class="sd">    </span>
+<span class="sd">    This actor is useful for showing the number of lives or missiles</span>
+<span class="sd">    etc in a game.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;horizontal&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the RepeatedVisualActor&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RepeatedVisualActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_repeat</span> <span class="o">=</span> <span class="n">repeat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span> <span class="o">=</span> <span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current</span> <span class="o">=</span> <span class="n">repeat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">=</span> <span class="n">orientation</span>
+
+    <span class="k">def</span> <span class="nf">_resetVisual</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the visual item on the center point</span>
+<span class="sd">        </span>
+<span class="sd">        We need to override this because our size is not determined by our visual</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Adjust our location so that we are positioned and sized appropriately</span>
+        <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSpatialCentered</span><span class="p">()</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">==</span> <span class="s">&#39;horizontal&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSpatialCentered</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_repeat</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">height</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSpatialCentered</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_repeat</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Here is a hack - sometimes the visual width changes and we want to update our width</span>
+        <span class="c"># so we let the visual know about us so it can update our width. This is almost </span>
+        <span class="c"># certainly the wrong thing to do, but we have some tests in there so hopefully</span>
+        <span class="c"># the right thing becomes obvious later!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">_actor_parent</span> <span class="o">=</span> <span class="bp">self</span>
+        
+<div class="viewcode-block" id="RepeatedVisualActor.renderTo"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor.renderTo">[docs]</a>    <span class="k">def</span> <span class="nf">renderTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render ourself to the given renderer&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="p">:</span>
+            <span class="n">layer</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">getLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)</span>
+            <span class="n">camera</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">camera</span>
+            <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">static</span><span class="p">:</span>
+                <span class="n">ox</span><span class="p">,</span> <span class="n">oy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOrigin</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">camera</span><span class="o">.</span><span class="n">canSee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">ox</span><span class="p">,</span> <span class="n">oy</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">getRelativeLocation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> 
+                <span class="k">return</span> <span class="c"># Cannot see me</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">==</span> <span class="s">&#39;horizontal&#39;</span><span class="p">:</span>
+                        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">ox</span> <span class="o">+</span> <span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span><span class="p">,</span> <span class="n">oy</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">ox</span><span class="p">,</span> <span class="n">oy</span> <span class="o">+</span> <span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">renderTo</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">renderer</span><span class="o">.</span><span class="n">getLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)</span><span class="o">.</span><span class="n">getSurface</span><span class="p">(),</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="RepeatedVisualActor.reduceRepeat"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor.reduceRepeat">[docs]</a>    <span class="k">def</span> <span class="nf">reduceRepeat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reduce the repeat by a certain amount&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setRepeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current</span> <span class="o">-</span> <span class="n">amount</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="RepeatedVisualActor.increaseRepeat"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor.increaseRepeat">[docs]</a>    <span class="k">def</span> <span class="nf">increaseRepeat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amount</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Increase the repeat by a certain amount&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setRepeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current</span> <span class="o">+</span> <span class="n">amount</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="RepeatedVisualActor.getRepeat"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor.getRepeat">[docs]</a>    <span class="k">def</span> <span class="nf">getRepeat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current repeat&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current</span>
+</div>
+<div class="viewcode-block" id="RepeatedVisualActor.setRepeat"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor.setRepeat">[docs]</a>    <span class="k">def</span> <span class="nf">setRepeat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the current repeat&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c">#</span>
+            <span class="c"># Reset the visual size</span>
+            <span class="n">ox</span><span class="p">,</span> <span class="n">oy</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSpatial</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation</span> <span class="o">==</span> <span class="s">&#39;horizontal&#39;</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visual</span><span class="o">.</span><span class="n">height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spacing</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setSpatial</span><span class="p">(</span><span class="n">ox</span><span class="p">,</span> <span class="n">oy</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;New spatial = </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">getSpatial</span><span class="p">())</span>
+        </div>
+<div class="viewcode-block" id="RepeatedVisualActor.resetRepeat"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.RepeatedVisualActor.resetRepeat">[docs]</a>    <span class="k">def</span> <span class="nf">resetRepeat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the repeat to the initial value&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setRepeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_repeat</span><span class="p">)</span>
+        
+        </div></div>
+<div class="viewcode-block" id="FormattedText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FormattedText">[docs]</a><span class="k">class</span> <span class="nc">FormattedText</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A text display that can be formatted&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">format</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the text&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FormattedText</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">justify</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">kw</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updateText</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="FormattedText.updateText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FormattedText.updateText">[docs]</a>    <span class="k">def</span> <span class="nf">updateText</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update our text&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FormattedText.setValue"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FormattedText.setValue">[docs]</a>    <span class="k">def</span> <span class="nf">setValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the value&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updateText</span><span class="p">()</span>
+            </div>
+<div class="viewcode-block" id="FormattedText.getValue"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FormattedText.getValue">[docs]</a>    <span class="k">def</span> <span class="nf">getValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the values&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</div></div>
+<div class="viewcode-block" id="NumericText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.NumericText">[docs]</a><span class="k">class</span> <span class="nc">NumericText</span><span class="p">(</span><span class="n">FormattedText</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A helper actor to display some text with a single number in there&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the text&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NumericText</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="NumericText.updateText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.NumericText.updateText">[docs]</a>    <span class="k">def</span> <span class="nf">updateText</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update our text&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&#39;value&#39;</span><span class="p">)</span>
+    <span class="nd">@value.setter</span>
+<div class="viewcode-block" id="NumericText.value"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.NumericText.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s">&#39;value&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="StringText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.StringText">[docs]</a><span class="k">class</span> <span class="nc">StringText</span><span class="p">(</span><span class="n">FormattedText</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A helper actor to display some text with text in there&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">colour</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the text&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StringText</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">format</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">justify</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="StringText.updateText"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.StringText.updateText">[docs]</a>    <span class="k">def</span> <span class="nf">updateText</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update our text&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getValue</span><span class="p">(</span><span class="s">&#39;value&#39;</span><span class="p">)</span>
+    <span class="nd">@value.setter</span>
+<div class="viewcode-block" id="StringText.value"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.StringText.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="s">&#39;value&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="MuteButton"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.MuteButton">[docs]</a><span class="k">class</span> <span class="nc">MuteButton</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A button to mute sound&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sprite_name</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">mute_sound</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">mute_music</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the button&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MuteButton</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="s">&#39;mute-button&#39;</span><span class="p">,</span> <span class="s">&#39;mute-button&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mute_sound</span> <span class="o">=</span> <span class="n">mute_sound</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mute_music</span> <span class="o">=</span> <span class="n">mute_music</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setSpriteName</span><span class="p">(</span><span class="n">sprite_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setAlpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_LEFT_CLICK</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toggleSound</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="MuteButton.toggleSound"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.MuteButton.toggleSound">[docs]</a>    <span class="k">def</span> <span class="nf">toggleSound</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">arg</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clicked on the button&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mute_sound</span><span class="p">:</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">Sounds</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mute_sound</span><span class="p">:</span>
+            <span class="n">serge</span><span class="o">.</span><span class="n">sound</span><span class="o">.</span><span class="n">Music</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">setCell</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">getCell</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ToggledMenu"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ToggledMenu">[docs]</a><span class="k">class</span> <span class="nc">ToggledMenu</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">MountableActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implements a menu of options that can be toggled&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">default</span><span class="p">,</span> <span class="n">on_colour</span><span class="p">,</span> <span class="n">off_colour</span><span class="p">,</span> 
+                    <span class="n">width</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">font_colour</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span> 
+                    <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the ToggledMenu&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ToggledMenu</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Reality check</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidMenu</span><span class="p">(</span><span class="s">&#39;Menu must have at least one item in it&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">items</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidMenu</span><span class="p">(</span><span class="s">&#39;Menu cannot have duplicates in it (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)))</span>         
+        <span class="c">#</span>
+        <span class="c"># Setup the menu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">layout</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_colour</span> <span class="o">=</span> <span class="n">on_colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">off_colour</span> <span class="o">=</span> <span class="n">off_colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">layout</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setupMenu</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">font_colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selectItem</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_setupMenu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">font_colour</span><span class="p">,</span> <span class="n">font_name</span><span class="p">,</span> <span class="n">font_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setup all the menu items&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_menu_items</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">items</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selection</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="c">#</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+            <span class="n">new_item</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">((</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-menuitem&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-item-</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">idx</span><span class="p">))</span>
+            <span class="n">new_item</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">visualblocks</span><span class="o">.</span><span class="n">RectangleText</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">font_colour</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">off_colour</span><span class="p">,</span>
+                <span class="n">font_size</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="n">font_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_menu_items</span><span class="p">[</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_item</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addActor</span><span class="p">(</span><span class="n">new_item</span><span class="p">)</span>
+            <span class="n">new_item</span><span class="o">.</span><span class="n">linkEvent</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_LEFT_CLICK</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_itemClick</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="ToggledMenu.selectItem"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ToggledMenu.selectItem">[docs]</a>    <span class="k">def</span> <span class="nf">selectItem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Select an item by name&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Don&#39;t select if already selected</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selection</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c">#</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">the_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_menu_items</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidMenuItem</span><span class="p">(</span><span class="s">&#39;Menu item &quot;</span><span class="si">%s</span><span class="s">&quot; not found in menu </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="c">#</span>
+        <span class="c"># Highlight items</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_menu_items</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">rect_visual</span><span class="o">.</span><span class="n">colour</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_colour</span> <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="n">the_item</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">off_colour</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selection</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ToggledMenu.selectItemIndex"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ToggledMenu.selectItemIndex">[docs]</a>    <span class="k">def</span> <span class="nf">selectItemIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Select an item by its index&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidMenuItem</span><span class="p">(</span><span class="s">&#39;Index </span><span class="si">%s</span><span class="s"> is outside the range of menu </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNiceName</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selectItem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        </div>
+<div class="viewcode-block" id="ToggledMenu.getSelection"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ToggledMenu.getSelection">[docs]</a>    <span class="k">def</span> <span class="nf">getSelection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current selection&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_selection</span>
+        </div>
+<div class="viewcode-block" id="ToggledMenu.getSelectionIndex"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.ToggledMenu.getSelectionIndex">[docs]</a>    <span class="k">def</span> <span class="nf">getSelectionIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current selection index&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_selection</span><span class="p">)</span>
+        </div>
+    <span class="k">def</span> <span class="nf">_itemClick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clicked on an item&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selectItem</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>     
+
+</div>
+<div class="viewcode-block" id="AnimateThenDieActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.AnimateThenDieActor">[docs]</a><span class="k">class</span> <span class="nc">AnimateThenDieActor</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An actor that shows its animation and then is removed from the world&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sprite_name</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the AnimateThenDieActor</span>
+<span class="sd">        </span>
+<span class="sd">        If the parent is specified then we will be moved to the location of the parent</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AnimateThenDieActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setSpriteName</span><span class="p">(</span><span class="n">sprite_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="AnimateThenDieActor.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.AnimateThenDieActor.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Added the actor to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AnimateThenDieActor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            </div>
+<div class="viewcode-block" id="AnimateThenDieActor.updateActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.AnimateThenDieActor.updateActor">[docs]</a>    <span class="k">def</span> <span class="nf">updateActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the actor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="c"># Ok, run its course</span>
+            <span class="n">world</span><span class="o">.</span><span class="n">scheduleActorRemoval</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            </div></div>
+<div class="viewcode-block" id="FPSDisplay"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FPSDisplay">[docs]</a><span class="k">class</span> <span class="nc">FPSDisplay</span><span class="p">(</span><span class="n">NumericText</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Displays the current FPS on the screen&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">font_colour</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the FPS display&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FPSDisplay</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="s">&#39;fps&#39;</span><span class="p">,</span> <span class="s">&#39;fps&#39;</span><span class="p">,</span> <span class="s">&#39;FPS: </span><span class="si">%5.2f</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">colour</span><span class="o">=</span><span class="n">font_colour</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="n">font_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="s">&#39;ui&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ix</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iy</span> <span class="o">=</span> <span class="n">y</span>
+        
+<div class="viewcode-block" id="FPSDisplay.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FPSDisplay.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Added to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FPSDisplay</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">iy</span><span class="p">)</span>  
+        </div>
+<div class="viewcode-block" id="FPSDisplay.updateActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.FPSDisplay.updateActor">[docs]</a>    <span class="k">def</span> <span class="nf">updateActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the actor&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FPSDisplay</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">updateActor</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">getStats</span><span class="p">()</span><span class="o">.</span><span class="n">average_frame_rate</span>
+        
+ </div></div>
+<div class="viewcode-block" id="TextEntryWidget"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.TextEntryWidget">[docs]</a><span class="k">class</span> <span class="nc">TextEntryWidget</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">MountableActor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Implements a single line text entry widget</span>
+<span class="sd">    </span>
+<span class="sd">    Support letters and numbers. Delete, backspace and left all delete the last</span>
+<span class="sd">    character. Enter triggers an ACCEPT event.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">font_size</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> 
+                    <span class="n">justify</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">background_visual</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">background_layer</span><span class="o">=</span><span class="s">&#39;background&#39;</span><span class="p">,</span>
+                    <span class="n">show_cursor</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">blink_time</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialise the text entry widget&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextEntryWidget</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># The text to display</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">StringText</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-text&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">colour</span><span class="o">=</span><span class="n">colour</span><span class="p">,</span> <span class="n">font_name</span><span class="o">=</span><span class="n">font_name</span><span class="p">,</span>
+            <span class="n">font_size</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span> <span class="n">justify</span><span class="o">=</span><span class="n">justify</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c">#</span>
+        <span class="c"># Our background</span>
+        <span class="k">if</span> <span class="n">background_visual</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">background</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mountActor</span><span class="p">(</span><span class="n">serge</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">Actor</span><span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-bg&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">background</span><span class="o">.</span><span class="n">visual</span> <span class="o">=</span> <span class="n">background_visual</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">background</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="n">background_layer</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_cursor</span> <span class="o">=</span> <span class="n">show_cursor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">colour</span> <span class="o">=</span> <span class="n">colour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">font_name</span> <span class="o">=</span> <span class="n">font_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blink_time</span> <span class="o">=</span> <span class="n">blink_time</span>
+                    
+<div class="viewcode-block" id="TextEntryWidget.setLayerName"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.TextEntryWidget.setLayerName">[docs]</a>    <span class="k">def</span> <span class="nf">setLayerName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the layer name&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextEntryWidget</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">setLayerName</span><span class="p">(</span><span class="n">layer_name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TextEntryWidget.addedToWorld"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.TextEntryWidget.addedToWorld">[docs]</a>    <span class="k">def</span> <span class="nf">addedToWorld</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Added to the world&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextEntryWidget</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">addedToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keyboard</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">CurrentEngine</span><span class="p">()</span><span class="o">.</span><span class="n">getKeyboard</span><span class="p">()</span> 
+        <span class="c">#</span>
+        <span class="c"># The cursor</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_cursor</span><span class="p">:</span>
+            <span class="c">#</span>
+            <span class="c"># Create the cursor</span>
+            <span class="n">font</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">visual</span><span class="o">.</span><span class="n">font</span>
+            <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">addVisualActorToWorld</span><span class="p">(</span><span class="n">world</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">-cursor&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">visualblocks</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">colour</span><span class="p">),</span>
+                <span class="n">layer_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getLayerName</span><span class="p">())</span>
+            <span class="c">#</span>
+            <span class="c"># And make it blink</span>
+            <span class="n">manager</span> <span class="o">=</span> <span class="n">world</span><span class="o">.</span><span class="n">findActorByName</span><span class="p">(</span><span class="s">&#39;behaviours&#39;</span><span class="p">)</span>
+            <span class="n">manager</span><span class="o">.</span><span class="n">assignBehaviour</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">,</span> <span class="n">serge</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">behaviours</span><span class="o">.</span><span class="n">Blink</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blink_time</span><span class="p">),</span> <span class="s">&#39;blinking&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="bp">None</span>
+                
+</div>
+<div class="viewcode-block" id="TextEntryWidget.updateActor"><a class="viewcode-back" href="../../../blocks.html#serge.blocks.actors.TextEntryWidget.updateActor">[docs]</a>    <span class="k">def</span> <span class="nf">updateActor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">world</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the entry widget&quot;&quot;&quot;</span>
+        <span class="c">#</span>
+        <span class="c"># Handle the keystrokes</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keyboard</span><span class="o">.</span><span class="n">getClicked</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_BACKSPACE</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_DELETE</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_LEFT</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s">&#39;&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s">&#39;&#39;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">value</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">K_RETURN</span><span class="p">,</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_KP_ENTER</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processEvent</span><span class="p">((</span><span class="n">serge</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">E_ACCEPT_ENTRY</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Invalid key (</span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+        <span class="c">#</span>
+        <span class="c"># Position the cursor if we have one</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">moveTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            </div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">serge 0.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Paul Paterson.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
